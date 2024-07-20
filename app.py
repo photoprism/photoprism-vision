@@ -59,13 +59,15 @@ def vitGenerateResponse():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
 
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
+    
 
     vitModel.to(device)
 
     data = request.get_json()
     url = data.get('url')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
 
     max_length = 16
     num_beams = 4

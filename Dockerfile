@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY requirements.txt ./
 
+RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf -y | sh
+
 RUN pip install -r requirements.txt
 
 COPY . .

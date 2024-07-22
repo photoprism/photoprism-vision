@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 import requests
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
+from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
 import torch
 
 app = Flask(__name__)
@@ -14,6 +14,10 @@ vitModel = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-
 vitFeature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 vitTokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+blipProcessor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
+blipModel = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
+
 
 
 @app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST'])
@@ -91,6 +95,28 @@ def vitGenerateResponse():
         return preds
 
     processed_text = predict_step(url) # returns prediction
+
+    return jsonify({"processed_text": processed_text}), 200
+
+@app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST'])
+def blipGenerateResponse():
+
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+     
+    data = request.get_json()
+    url = data.get('url')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+
+    img_url = url
+    raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
+
+    inputs = blipProcessor(raw_image, return_tensors="pt")
+
+    out = blipModel.generate(**inputs)
+    processed_text = blipProcessor.decode(out[0], skip_special_tokens=True)
 
     return jsonify({"processed_text": processed_text}), 200
 

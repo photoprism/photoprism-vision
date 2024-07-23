@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 import requests
 from PIL import Image
@@ -6,18 +7,49 @@ import torch
 
 app = Flask(__name__)
 
-# Load model and processor at startup
-kosmosModel = AutoModelForVision2Seq.from_pretrained("microsoft/kosmos-2-patch14-224")
-kosmosProcessor = AutoProcessor.from_pretrained("microsoft/kosmos-2-patch14-224")
+# Define model paths
+MODEL_DIR = "models"
+KOSMOS_MODEL_PATH = os.path.join(MODEL_DIR, "kosmos-2-patch14-224")
+VIT_MODEL_PATH = os.path.join(MODEL_DIR, "vit-gpt2-image-captioning")
+BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
 
-vitModel = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-vitFeature_extractor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-vitTokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+def download_model(model_name, save_path):
+    if not os.path.exists(save_path):
+        print(f"Downloading {model_name}...")
+        if model_name == "microsoft/kosmos-2-patch14-224":
+            AutoModelForVision2Seq.from_pretrained(model_name).save_pretrained(save_path)
+            AutoProcessor.from_pretrained(model_name).save_pretrained(save_path)
+        elif model_name == "nlpconnect/vit-gpt2-image-captioning":
+            VisionEncoderDecoderModel.from_pretrained(model_name).save_pretrained(save_path)
+            ViTImageProcessor.from_pretrained(model_name).save_pretrained(save_path)
+            AutoTokenizer.from_pretrained(model_name).save_pretrained(save_path)
+        elif model_name == "Salesforce/blip-image-captioning-large":
+            BlipForConditionalGeneration.from_pretrained(model_name).save_pretrained(save_path)
+            BlipProcessor.from_pretrained(model_name).save_pretrained(save_path)
+        print(f"{model_name} downloaded and saved to {save_path}")
+    else:
+        print(f"{model_name} already exists at {save_path}")
+
+# Download models
+os.makedirs(MODEL_DIR, exist_ok=True)
+download_model("microsoft/kosmos-2-patch14-224", KOSMOS_MODEL_PATH)
+download_model("nlpconnect/vit-gpt2-image-captioning", VIT_MODEL_PATH)
+download_model("Salesforce/blip-image-captioning-large", BLIP_MODEL_PATH)
+
+# Load models
+print("Loading models...")
+kosmosModel = AutoModelForVision2Seq.from_pretrained(KOSMOS_MODEL_PATH)
+kosmosProcessor = AutoProcessor.from_pretrained(KOSMOS_MODEL_PATH)
+
+vitModel = VisionEncoderDecoderModel.from_pretrained(VIT_MODEL_PATH)
+vitFeature_extractor = ViTImageProcessor.from_pretrained(VIT_MODEL_PATH)
+vitTokenizer = AutoTokenizer.from_pretrained(VIT_MODEL_PATH)
+
+blipProcessor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
+blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-blipProcessor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
-blipModel = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
-
+vitModel.to(device)
 
 
 @app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST'])

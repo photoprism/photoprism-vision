@@ -1,9 +1,26 @@
-PhotoPrism: Machine Learning Models
-===================================
+PhotoPrism: Computer Vision Models
+==================================
 
-Additional models that can be used with PhotoPrism.
+Supplementary computer vision models that can be used with PhotoPrism.
 
-## Submitting Pull Requests ##
+## Installing Build Dependencies
+
+Please make sure that you have Git and Python 3 installed on your system. On Ubuntu/Debian Linux you can run the following command for this:
+
+```
+sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
+```
+
+You can then proceed with the installation of the Python dependencies in a virtual environment by either using the `Makefiles` (run `make` in the main project directory) or by manually running the following commands in the respective subdirectory, e.g.:
+
+```bash
+cd describe
+python3 -m venv venv
+. ./venv/bin/activate
+./venv/bin/pip3 install --disable-pip-version-check -r requirements.txt
+```
+
+## Submitting Pull Requests
 
 Follow our [step-by-step guide](https://docs.photoprism.app/developer-guide/pull-requests) to learn how to submit new features, bug fixes, and documentation enhancements.
 

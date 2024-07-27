@@ -1,3 +1,30 @@
+# Docker configuration files
+Dockerfile
+docker-compose*
+compose.yaml
+compose.*.yaml
+.dockerignore
+
+# Python cache and dependencies
+venv
 .venv
-.git
+__pycache__
+
+# Files generated automatically, e.g. by IDEs and operating systems
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.heartbeat
 .idea
+.glide
+*~
+.goutputstream*
+.c9revisions
+.settings
+.swp
+.tmp
+.env

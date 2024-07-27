@@ -12,16 +12,16 @@ NUMERIC='^[0-9]+$'
 BUILD_DATE=$(/bin/date -u +%y%m%d)
 
 # Kill old builder if still alive.
-echo "build: removing existing model-docker-multibuilder..."
-docker buildx rm model-docker-multibuilder 2>/dev/null
+echo "build: removing existing vision-docker-multibuilder..."
+docker buildx rm vision-docker-multibuilder 2>/dev/null
 
 # Wait for 3s.
 sleep 3
 
 # Create builder.
-docker buildx create --name model-docker-multibuilder --use  || { echo 'failed'; exit 1; }
+docker buildx create --name vision-docker-multibuilder --use  || { echo 'failed'; exit 1; }
 
-echo "Starting 'photoprism/model-$1' multi-arch build based on $1/Dockerfile..."
+echo "Starting 'photoprism/vision-$1' multi-arch build based on $1/Dockerfile..."
 echo "Build Arch: $2"
 
 if [[ $1 ]] && [[ $2 ]] && [[ -z $3 ]]; then
@@ -33,8 +33,8 @@ if [[ $1 ]] && [[ $2 ]] && [[ -z $3 ]]; then
       --no-cache \
       --build-arg BUILD_TAG=$BUILD_DATE \
       -f $1/Dockerfile \
-      -t photoprism/model-$1:preview \
-      --push .
+      -t photoprism/vision-$1:preview \
+      --push $1
 elif [[ $3 =~ $NUMERIC ]]; then
     echo "Build Tags: $3, latest"
 
@@ -48,9 +48,9 @@ elif [[ $3 =~ $NUMERIC ]]; then
       --no-cache \
       --build-arg BUILD_TAG=$3 \
       -f $1/Dockerfile \
-      -t photoprism/model-$1:latest \
-      -t photoprism/model-$1:$3 $4 \
-      --push .
+      -t photoprism/vision-$1:latest \
+      -t photoprism/vision-$1:$3 $4 \
+      --push $1
 else
     echo "Build Tags: $3"
 
@@ -64,11 +64,11 @@ else
       --no-cache \
       --build-arg BUILD_TAG=$BUILD_DATE \
       -f $1/Dockerfile \
-      -t photoprism/model-$1:$3 $4 \
-      --push .
+      -t photoprism/vision-$1:$3 $4 \
+      --push $1
 fi
 
-echo "Removing model-docker-multibuilder..."
-docker buildx rm model-docker-multibuilder
+echo "Removing vision-docker-multibuilder..."
+docker buildx rm vision-docker-multibuilder
 
 echo "Done."

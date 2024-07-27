@@ -2,11 +2,27 @@ BUILD_GIT ?= $(shell (cd .. && git describe --always))
 BUILD_DATE ?= $(shell date -u +%y%m%d)
 BUILD_TAG ?= $(BUILD_DATE)-$(BUILD_GIT)
 
-all: describe-amd64
-describe-amd64:
-	./build.sh describe linux/amd64
-describe:
-	./build.sh describe linux/amd64,linux/arm64
+UNAME := $(shell uname)
 
-# Declare all targets as "PHONY", see https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html.
-MAKEFLAGS += --always-make
+all: pip install
+deps: pip upgrade
+install: venv
+
+build: docker-build
+docker-build:
+	(cd describe && make docker-build)
+
+pip:
+ifeq ($(UNAME), Linux)
+	sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
+endif
+
+venv: describe/venv
+describe/venv:
+	(cd describe && make venv)
+
+upgrade: upgrade-describe
+upgrade-describe:
+	(cd describe && make upgrade)
+
+.PHONY: all pip deps install build docker-build venv upgrade upgrade-describe;

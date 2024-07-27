@@ -19,4 +19,3 @@ services:
     #  - "/dev/nvidia-nvswitchctl:/dev/nvidia-nvswitchctl"
     #  - "/dev/nvidia-uvm:/dev/nvidia-uvm"
     #  - "/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
-    #  - "/dev/video11:/dev/video11"                 # Video4Linux Video Encode Device (h264_v4l2m2m)

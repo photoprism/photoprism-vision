@@ -20,7 +20,7 @@ First of all, please make sure that you have [Git](https://git-scm.com/downloads
 sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
 ```
 
-You can then install the required Python dependencies in a virtual environment by either using the `Makefiles` we provide (i.e. run `make` in the main project directory or a subdirectory) or by running the following commands in a service subdirectory, e.g:
+You can then install the required Python dependencies in a virtual environment by either using the Makefiles we provide (i.e. run `make` in the main project directory or a subdirectory) or by manually running the following commands in a service subdirectory, for example:
 
 ```bash
 cd describe

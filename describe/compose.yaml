@@ -1,0 +1,33 @@
+## PhotoPrism: Vision Describe Service
+## FOR TEST AND DEVELOPMENT ONLY, DO NOT USE IN PRODUCTION
+## see https://github.com/photoprism/photoprism-vision
+
+services:
+  ## Vision Describe Service, accessible through the following default endpoint URL:
+  ## http://localhost:5000/api/v1/vision/describe
+  vision-describe:
+    build: .
+    image: photoprism/vision-describe:develop
+    stop_grace_period: 5s
+    ports:
+      - "5000:5000"   # Default HTTP port (host:container)
+    environment:
+      TF_CPP_MIN_LOG_LEVEL: 0                        # show all TensorFlow log messages
+    # devices:
+    #  - "/dev/dri:/dev/dri"                         # Intel QSV (Broadwell and later) or VAAPI (Haswell and earlier)
+    #  - "/dev/nvidia0:/dev/nvidia0"                 # Nvidia CUDA
+    #  - "/dev/nvidiactl:/dev/nvidiactl"
+    #  - "/dev/nvidia-modeset:/dev/nvidia-modeset"
+    #  - "/dev/nvidia-nvswitchctl:/dev/nvidia-nvswitchctl"
+    #  - "/dev/nvidia-uvm:/dev/nvidia-uvm"
+    #  - "/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
+    #  - "/dev/video11:/dev/video11"                 # Video4Linux Video Encode Device (h264_v4l2m2m)
+    working_dir: "/app"
+    volumes:
+      - ".:/app"
+
+## Create shared "photoprism-vision" network for connecting with services in other compose.yaml files
+networks:
+  default:
+    name: photoprism-vision
+    driver: bridge

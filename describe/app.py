@@ -54,22 +54,11 @@ blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 vitModel.to(device)
 
-
-@app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST'])
-def kosmosGenerateResponse():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
-
-    data = request.get_json()
-    url = data.get('url')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-
+def kosmosGenerateResponse(url):
     try:
         image = Image.open(requests.get(url, stream=True).raw)
     except Exception as e:
-        return jsonify({"error": f"Unable to fetch image: {str(e)}"}), 500
+        return "fetchError", f"Unable to fetch image: {str(e)}"
 
     prompt = "<grounding>An image of"
 
@@ -88,23 +77,12 @@ def kosmosGenerateResponse():
         generated_text = kosmosProcessor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         processed_text, entities = kosmosProcessor.post_process_generation(generated_text)
     except Exception as e:
-        return jsonify({"error": f"Error during processing: {str(e)}"}), 500
+        return "processingError", f"Error during processing: {str(e)}"
 
-    return jsonify({"processed_text": processed_text}), 200
+    return "ok", processed_text
 
-
-@app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST'])
-def vitGenerateResponse():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
-
-    vitModel.to(device)
-
-    data = request.get_json()
-    url = data.get('url')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
+def vitGenerateResponse(url):
+    vitModel.to(device)    
 
     max_length = 16
     num_beams = 4
@@ -130,20 +108,9 @@ def vitGenerateResponse():
 
     processed_text = predict_step(url)  # returns prediction
 
-    return jsonify({"processed_text": processed_text}), 200
+    return "ok", processed_text
 
-
-@app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST'])
-def blipGenerateResponse():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
-
-    data = request.get_json()
-    url = data.get('url')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-
+def blipGenerateResponse(url):
     img_url = url
     raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
 
@@ -152,7 +119,108 @@ def blipGenerateResponse():
     out = blipModel.generate(**inputs)
     processed_text = blipProcessor.decode(out[0], skip_special_tokens=True)
 
-    return jsonify({"processed_text": processed_text}), 200
+    return "ok", processed_text
+
+@app.route('/api/v1/vision/describe', methods=['POST'])
+def generateResponse():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    data = request.get_json()
+    url = data.get('url')
+    model = data.get('model')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    if not model:
+        return jsonify({"error": "Model name is required"}), 400
+    
+    if model == "kosmos-2":
+        status, result = kosmosGenerateResponse(url)
+        if status == "fetchError":
+            return jsonify({"error": result}), 500
+        elif status == "processingError":
+            return jsonify({"error": result}), 500
+        elif status == "ok":
+            return jsonify({"processed_text": result}), 200
+    elif model == "vit-gpt2-image-captioning":
+        status, result = vitGenerateResponse(url)
+        if status == "ok":
+            return jsonify({"processed_text": result}), 200
+        return jsonify({"error": "Error during processing"})
+    elif model == "blip-image-captioning-large":
+        status, result = blipGenerateResponse(url)
+        if status =='ok':
+            return jsonify({"processed_text": result}), 200
+        return jsonify({"error": "Error during processing"})
+
+
+
+
+
+
+
+@app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST'])
+def kosmosController():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    data = request.get_json()
+    url = data.get('url')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    
+    status, result = kosmosGenerateResponse(url)
+
+    if status == "fetchError":
+        return jsonify({"error": result}), 500
+    elif status == "processingError":
+        return jsonify({"error": result}), 500
+    elif status == "ok":
+        return jsonify({"processed_text": result}), 200
+
+    
+
+
+@app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST'])
+def vitController():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    
+    data = request.get_json()
+    url = data.get('url')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    
+    status, result = vitGenerateResponse(url)
+
+    if status == "ok":
+        return jsonify({"processed_text": result}), 200
+    
+    return jsonify({"error": "Error during processing"})
+
+
+
+@app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST'])
+def blipController():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    data = request.get_json()
+    url = data.get('url')
+
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    
+    status, result = blipGenerateResponse(url)
+
+    if status == "ok":
+        return jsonify({"processed_text": result}), 200
+    
+    return jsonify({"error", "Error during processing"})
+
+
 
 
 if __name__ == '__main__':

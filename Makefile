@@ -12,6 +12,14 @@ build: docker-build
 docker-build:
 	(cd describe && make docker-build)
 
+preview: preview-describe
+preview-describe:
+	./build.sh describe linux/amd64,linux/arm64
+
+release: release-describe
+release-describe:
+	./build.sh describe linux/amd64,linux/arm64 $(BUILD_DATE)
+
 pip:
 ifeq ($(UNAME), Linux)
 	sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
@@ -25,4 +33,4 @@ upgrade: upgrade-describe
 upgrade-describe:
 	(cd describe && make upgrade)
 
-.PHONY: all pip deps install build docker-build venv upgrade upgrade-describe;
+.PHONY: all pip deps install build deploy deploy-amd64 docker-build venv upgrade upgrade-describe;

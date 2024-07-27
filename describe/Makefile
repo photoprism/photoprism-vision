@@ -31,9 +31,4 @@ install-venv:
 	. ./venv/bin/activate
 	./venv/bin/pip3 install --disable-pip-version-check -r requirements.txt
 
-deploy:
-	../build.sh describe linux/amd64,linux/arm64
-deploy-amd64:
-	../build.sh describe linux/amd64
-
 .PHONY: all pip deps upgrade build docker-build remove-venv build deploy;

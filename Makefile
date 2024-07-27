@@ -14,11 +14,11 @@ docker-build:
 
 preview: preview-describe
 preview-describe:
-	./build.sh describe linux/amd64,linux/arm64
+	./build.sh describe linux/amd64
 
 release: release-describe
 release-describe:
-	./build.sh describe linux/amd64,linux/arm64 $(BUILD_DATE)
+	./build.sh describe linux/amd64 $(BUILD_DATE)
 
 pip:
 ifeq ($(UNAME), Linux)

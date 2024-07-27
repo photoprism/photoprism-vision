@@ -1,4 +1,4 @@
-FROM python:3.11-bookworm
+FROM python:3.12-slim
 
 # Declare build parameters.
 ARG TARGETARCH
@@ -14,10 +14,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-WORKDIR /app
-
 # Copy source to image.
-COPY describe .
+WORKDIR /app
+COPY . .
 
 # Install Python packages.
 RUN pip install --no-cache-dir -r requirements.txt

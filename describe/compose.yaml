@@ -9,6 +9,7 @@ services:
     build: .
     image: photoprism/vision-describe:develop
     stop_grace_period: 5s
+    command: ["flask", "--app", "app", "run", "--host", "0.0.0.0"]
     ports:
       - "5000:5000"   # Default HTTP port (host:container)
     environment:

@@ -2,7 +2,8 @@ import os
 from flask import Flask, jsonify, request
 import requests
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
+from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, \
+    AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
 import torch
 
 app = Flask(__name__)
@@ -12,6 +13,7 @@ MODEL_DIR = "models"
 KOSMOS_MODEL_PATH = os.path.join(MODEL_DIR, "kosmos-2-patch14-224")
 VIT_MODEL_PATH = os.path.join(MODEL_DIR, "vit-gpt2-image-captioning")
 BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
+
 
 def download_model(model_name, save_path):
     if not os.path.exists(save_path):
@@ -29,6 +31,7 @@ def download_model(model_name, save_path):
         print(f"{model_name} downloaded and saved to {save_path}")
     else:
         print(f"{model_name} already exists at {save_path}")
+
 
 # Download models
 os.makedirs(MODEL_DIR, exist_ok=True)
@@ -89,13 +92,11 @@ def kosmosGenerateResponse():
 
     return jsonify({"processed_text": processed_text}), 200
 
+
 @app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST'])
 def vitGenerateResponse():
-
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
-
-    
 
     vitModel.to(device)
 
@@ -108,6 +109,7 @@ def vitGenerateResponse():
     max_length = 16
     num_beams = 4
     gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
+
     def predict_step(url):
         image = Image.open(requests.get(url, stream=True).raw)
         images = []
@@ -126,16 +128,16 @@ def vitGenerateResponse():
         preds = [pred.strip() for pred in preds]
         return preds
 
-    processed_text = predict_step(url) # returns prediction
+    processed_text = predict_step(url)  # returns prediction
 
     return jsonify({"processed_text": processed_text}), 200
 
+
 @app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST'])
 def blipGenerateResponse():
-
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
-     
+
     data = request.get_json()
     url = data.get('url')
 
@@ -152,5 +154,6 @@ def blipGenerateResponse():
 
     return jsonify({"processed_text": processed_text}), 200
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(port=5000, debug=True)

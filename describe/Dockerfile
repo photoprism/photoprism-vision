@@ -63,7 +63,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
     apt-get -qq install \
       curl build-essential libhdf5-dev make bash nano rsync pkg-config util-linux && \
     echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
-    echo 'export PS1="\u@$DOCKER_TAG:\w\$ "' >> /etc/skel/.bashrc && \
+    echo 'export PS1="\u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
     chmod u=rwx,go=rx /app/scripts/*.sh && \
     cp /etc/skel/.bashrc /root/.bashrc && \
     cleanup.sh

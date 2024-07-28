@@ -5,6 +5,7 @@ from PIL import Image
 from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, \
     AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
 import torch
+import uuid
 
 app = Flask(__name__)
 
@@ -141,16 +142,16 @@ def generateResponse():
         elif status == "processingError":
             return jsonify({"error": result}), 500
         elif status == "ok":
-            return jsonify({"processed_text": result}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
     elif model == "vit-gpt2-image-captioning":
         status, result = vitGenerateResponse(url)
         if status == "ok":
-            return jsonify({"processed_text": result}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
         return jsonify({"error": "Error during processing"})
     elif model == "blip-image-captioning-large":
         status, result = blipGenerateResponse(url)
         if status =='ok':
-            return jsonify({"processed_text": result}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
         return jsonify({"error": "Error during processing"})
 
 
@@ -177,7 +178,7 @@ def kosmosController():
     elif status == "processingError":
         return jsonify({"error": result}), 500
     elif status == "ok":
-        return jsonify({"processed_text": result}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
 
     
 
@@ -196,7 +197,7 @@ def vitController():
     status, result = vitGenerateResponse(url)
 
     if status == "ok":
-        return jsonify({"processed_text": result}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
     
     return jsonify({"error": "Error during processing"})
 
@@ -216,7 +217,7 @@ def blipController():
     status, result = blipGenerateResponse(url)
 
     if status == "ok":
-        return jsonify({"processed_text": result}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
     
     return jsonify({"error", "Error during processing"})
 

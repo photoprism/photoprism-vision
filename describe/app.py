@@ -133,6 +133,7 @@ def generateResponse():
 
     url = data.get('url')
     model = data.get('model')
+    id = data.get('id')
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -144,15 +145,21 @@ def generateResponse():
         elif status == "processingError":
             return jsonify({"error": result}), 500
         elif status == "ok":
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
+            if id:
+                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
     elif model == "vit-gpt2-image-captioning":
         status, result = vitGenerateResponse(url)
         if status == "ok":
+            if id:
+                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model}}), 200
             return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
         return jsonify({"error": "Error during processing"})
     elif model == "blip-image-captioning-large":
         status, result = blipGenerateResponse(url)
         if status =='ok':
+            if id:
+                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model}}), 200
             return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
         return jsonify({"error": "Error during processing"})        
 
@@ -172,6 +179,7 @@ def kosmosController():
         data = request.args
 
     url = data.get('url')
+    id = data.get('id')
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -183,6 +191,8 @@ def kosmosController():
     elif status == "processingError":
         return jsonify({"error": result}), 500
     elif status == "ok":
+        if id:
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
 
     
@@ -198,6 +208,7 @@ def vitController():
         data = request.args
     
     url = data.get('url')
+    id = data.get('id')
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -205,6 +216,8 @@ def vitController():
     status, result = vitGenerateResponse(url)
 
     if status == "ok":
+        if id:
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
     
     return jsonify({"error": "Error during processing"})
@@ -221,6 +234,7 @@ def blipController():
         data = request.args
 
     url = data.get('url')
+    id = data.get('id')
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
@@ -228,6 +242,8 @@ def blipController():
     status, result = blipGenerateResponse(url)
 
     if status == "ok":
+        if id:
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
     
     return jsonify({"error", "Error during processing"})

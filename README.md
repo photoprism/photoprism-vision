@@ -8,10 +8,6 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-The software in this repository is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the “License”).
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-
 ## Installing Build Dependencies
 
 Before installing the Python dependencies, please make sure that you have [Git](https://git-scm.com/downloads) and [Python 3.12+ (incl. pip)](https://www.python.org/downloads/) installed on your system, e.g. by running the following command on Ubuntu/Debian Linux:
@@ -34,9 +30,21 @@ python3 -m venv venv
 - [Aatif Dawawala](https://github.com/Aatif-Dawawala)
 - [Niaz Faridani-Rad](https://github.com/derneuere)
 
+[Learn more ›](https://github.com/photoprism/photoprism-vision/graphs/contributors)
+ 
 ## Submitting Pull Requests
 
 Follow our [step-by-step guide](https://docs.photoprism.app/developer-guide/pull-requests) to learn how to submit new features, bug fixes, and documentation enhancements.
+
+[Learn more ›](https://docs.photoprism.app/developer-guide/pull-requests)
+
+## License and Disclaimer
+
+The files in this repository are licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the “License”).
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+[Learn more ›](http://www.apache.org/licenses/LICENSE-2.0)
 
 ----
 

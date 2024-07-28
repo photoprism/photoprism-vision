@@ -16,7 +16,7 @@ Before installing the Python dependencies, please make sure that you have [Git](
 sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
 ```
 
-You can then install the required libraries in a virtual environment by either using the Makefiles we provide (i.e. run `make` in the main project directory or a subdirectory) or by manually running the following commands in a service directory such as `/describe`:
+You can then install the required libraries in a virtual environment by either using the Makefiles we provide (i.e. run `make` in the main project directory or a subdirectory) or by manually running the following commands in a service directory, for example:
 
 ```bash
 cd describe

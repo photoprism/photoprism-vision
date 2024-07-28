@@ -32,11 +32,11 @@ ARG BUILD_TAG
 
 # Set environment variables.
 ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scripts:/root/.cargo/bin:/app/venv/bin" \
-    HDF5_INCLUDEDIR="/usr/include/hdf5" \
-    DOCKER_TAG=$BUILD_TAG \
+    HDF5_PKGCONFIG_NAME="hdf5" \
+    DOCKER_TAG="${BUILD_TAG}" \
     DOCKER_ENV="prod" \
-    PS1="\u@$DOCKER_TAG:\w\$ " \
-    LD_LIBRARY_PATH="/usr/local/lib:/usr/lib" \
+    PS1="\u@${DOCKER_TAG}:\w\$ " \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
     NODE_ENV="production" \
     DEBIAN_FRONTEND="noninteractive" \
     TMPDIR="/tmp" \
@@ -50,7 +50,7 @@ ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scri
 
 # Copy source to image.
 WORKDIR /app
-COPY --chown=root:root --chmod=755 . .
+COPY --chown=root:root --chmod="u=rwX,go=rX" . .
 
 # Install system dependencies.
 RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
@@ -64,6 +64,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
       curl build-essential libhdf5-dev make bash nano rsync pkg-config util-linux && \
     echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
     echo 'export PS1="\u@$DOCKER_TAG:\w\$ "' >> /etc/skel/.bashrc && \
+    chmod u=rwx,go=rx /app/scripts/*.sh && \
     cp /etc/skel/.bashrc /root/.bashrc && \
     cleanup.sh
 
@@ -73,11 +74,11 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 # Install Python dependencies.
 RUN requirements.sh
 
-# Expose HTTP port.
+# Expose HTTP service port.
 EXPOSE 5000
 
-# Declare container entrypoint script.
+# Set container entrypoint script.
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
-# Listen at 0.0.0.0:5000.
+# Listen at 0.0.0.0:5000 when the container is started.
 CMD [ "flask", "--app", "app", "run", "--host", "0.0.0.0"]

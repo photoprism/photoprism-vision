@@ -9,6 +9,7 @@ compose.*.yaml
 venv
 .venv
 __pycache__
+models
 
 # Files generated automatically, e.g. by IDEs and operating systems
 .DS_Store

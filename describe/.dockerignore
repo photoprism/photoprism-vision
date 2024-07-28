@@ -1,12 +1,15 @@
 # Docker configuration files
 Dockerfile
 docker-compose*
+compose.yaml
+compose.*.yaml
 .dockerignore
 
 # Python cache and dependencies
 venv
 .venv
 __pycache__
+models
 
 # Files generated automatically, e.g. by IDEs and operating systems
 .DS_Store

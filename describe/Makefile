@@ -18,6 +18,10 @@ docker-build:
 	docker compose --profile=all pull --ignore-pull-failures
 	docker compose build
 
+start:
+	docker compose up -d
+stop:
+	docker compose down -v
 terminal:
 	docker compose exec vision-describe bash
 logs:

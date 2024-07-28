@@ -20,6 +20,11 @@ release: release-describe
 release-describe:
 	./build.sh describe linux/amd64,linux/arm64 $(BUILD_DATE)
 
+start:
+	docker compose --profile=all pull --ignore-pull-failures
+	docker compose up -d
+stop:
+	docker compose down -v
 terminal:
 	docker compose exec vision-describe bash
 logs:

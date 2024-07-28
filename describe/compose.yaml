@@ -6,27 +6,32 @@ services:
   ## Vision Describe Service, accessible through the following default endpoint URL:
   ## http://localhost:5000/api/v1/vision/describe
   vision-describe:
+    ## Build image from source code:
     build: .
     image: photoprism/vision-describe:develop
     stop_grace_period: 5s
     command: ["flask", "--app", "app", "run", "--host", "0.0.0.0"]
+    working_dir: "/app"
+    ## Make the service accessible on port 5000 (only change the left-hand side if necessary, e.g. “80:5000”):
     ports:
-      - "5000:5000"   # Default HTTP port (host:container)
+      - "5000:5000"
+    ## Set environment variables to configure the service (optional):
     environment:
       TF_CPP_MIN_LOG_LEVEL: 0                        # show all TensorFlow log messages
       ## Setting the following variables will run the service as a non-root user:
       # PHOTOPRISM_UID: 1000
       # PHOTOPRISM_GID: 1000
       # PHOTOPRISM_UMASK: 0000
+    ## Share host devices to enable CPU/GPU hardware acceleration (optional):
     # devices:
-    #  - "/dev/dri:/dev/dri"                         # Intel QSV (Broadwell and later) or VAAPI (Haswell and earlier)
-    #  - "/dev/nvidia0:/dev/nvidia0"                 # Nvidia CUDA
+    #  - "/dev/dri:/dev/dri"
+    #  - "/dev/nvidia0:/dev/nvidia0"
     #  - "/dev/nvidiactl:/dev/nvidiactl"
     #  - "/dev/nvidia-modeset:/dev/nvidia-modeset"
     #  - "/dev/nvidia-nvswitchctl:/dev/nvidia-nvswitchctl"
     #  - "/dev/nvidia-uvm:/dev/nvidia-uvm"
     #  - "/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
-    working_dir: "/app"
+    ## Mount current service directory for local development:
     volumes:
       - ".:/app"
 

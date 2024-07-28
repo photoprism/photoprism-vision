@@ -192,8 +192,8 @@ def kosmosController():
         return jsonify({"error": result}), 500
     elif status == "ok":
         if id:
-            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
 
     
 

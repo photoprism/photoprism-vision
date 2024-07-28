@@ -122,11 +122,15 @@ def blipGenerateResponse(url):
 
     return "ok", processed_text
 
-@app.route('/api/v1/vision/describe', methods=['POST'])
+@app.route('/api/v1/vision/describe', methods=['POST', 'GET'])
 def generateResponse():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
-    data = request.get_json()
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+        data = request.get_json()
+    elif request.method == 'GET':
+        data = request.args
+
     url = data.get('url')
     model = data.get('model')
 
@@ -158,12 +162,15 @@ def generateResponse():
 
 
 
-@app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST'])
+@app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST', 'GET'])
 def kosmosController():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+        data = request.get_json()
+    elif request.method == 'GET':
+        data = request.args
 
-    data = request.get_json()
     url = data.get('url')
 
     if not url:
@@ -181,12 +188,15 @@ def kosmosController():
     
 
 
-@app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST'])
+@app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST', 'GET'])
 def vitController():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+        data = request.get_json()
+    elif request.method == 'GET':
+        data = request.args
     
-    data = request.get_json()
     url = data.get('url')
 
     if not url:
@@ -201,12 +211,15 @@ def vitController():
 
 
 
-@app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST'])
+@app.route('/api/v1/vision/describe/blip-image-captioning-large', methods=['POST', 'GET'])
 def blipController():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+        data = request.get_json()
+    elif request.method == 'GET':
+        data = request.args
 
-    data = request.get_json()
     url = data.get('url')
 
     if not url:

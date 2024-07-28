@@ -132,17 +132,15 @@ def generateResponse():
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    if not model:
-        return jsonify({"error": "Model name is required"}), 400
     
-    if model == "kosmos-2":
+    if model == "kosmos-2" or not model:
         status, result = kosmosGenerateResponse(url)
         if status == "fetchError":
             return jsonify({"error": result}), 500
         elif status == "processingError":
             return jsonify({"error": result}), 500
         elif status == "ok":
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2"}}), 200
     elif model == "vit-gpt2-image-captioning":
         status, result = vitGenerateResponse(url)
         if status == "ok":
@@ -152,7 +150,7 @@ def generateResponse():
         status, result = blipGenerateResponse(url)
         if status =='ok':
             return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
-        return jsonify({"error": "Error during processing"})
+        return jsonify({"error": "Error during processing"})        
 
 
 

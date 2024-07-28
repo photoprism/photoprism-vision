@@ -23,6 +23,7 @@ release-describe:
 start:
 	docker compose --profile=all pull --ignore-pull-failures
 	docker compose up -d
+	docker compose logs -f
 stop:
 	docker compose down -v
 terminal:

@@ -11,7 +11,7 @@ export PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/s
 
 # detect environment
 case $DOCKER_ENV in
-  prod, develop)
+  prod)
     INIT_SCRIPT="/app/scripts/entrypoint-init.sh";
     ;;
 

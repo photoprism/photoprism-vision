@@ -22,6 +22,8 @@ release-describe:
 
 terminal:
 	docker compose exec vision-describe bash
+logs:
+	docker compose logs -f
 
 pip:
 ifeq ($(UNAME), Linux)

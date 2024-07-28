@@ -152,15 +152,15 @@ def generateResponse():
         status, result = vitGenerateResponse(url)
         if status == "ok":
             if id:
-                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
+                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model, "version": "latest"}}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model, "version": "latest"}}), 200
         return jsonify({"error": "Error during processing"})
     elif model == "blip-image-captioning-large":
         status, result = blipGenerateResponse(url)
         if status =='ok':
             if id:
-                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model}}), 200
+                return jsonify({"id": id, "result": {"caption": result}, "model": {"name": model, "version": "latest"}}), 200
+            return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": model, "version": "latest"}}), 200
         return jsonify({"error": "Error during processing"})        
 
 
@@ -217,8 +217,8 @@ def vitController():
 
     if status == "ok":
         if id:
-            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
     
     return jsonify({"error": "Error during processing"})
 
@@ -243,8 +243,8 @@ def blipController():
 
     if status == "ok":
         if id:
-            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning"}}), 200
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
     
     return jsonify({"error", "Error during processing"})
 

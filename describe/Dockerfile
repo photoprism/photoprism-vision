@@ -20,15 +20,33 @@ LABEL org.opencontainers.image.title="PhotoPrism® Vision"
 LABEL org.opencontainers.image.description="Describe Service"
 LABEL org.opencontainers.image.url="https://hub.docker.com/r/photoprism/vision-describe"
 LABEL org.opencontainers.image.source="https://github.com/photoprism/photoprism-vision/"
-LABEL org.opencontainers.image.documentation="https://docs.photoprism.app/developer-guide/"
+LABEL org.opencontainers.image.documentation="https://github.com/photoprism/photoprism-vision/blob/develop/README.md"
 LABEL org.opencontainers.image.authors="PhotoPrism UG <hello@photoprism.app>"
 LABEL org.opencontainers.image.vendor="PhotoPrism UG"
-LABEL org.opencontainers.image.licenses=""
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # Declare build parameters.
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG BUILD_TAG
+
+# Set environment variables.
+ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scripts:/root/.cargo/bin:/app/venv/bin" \
+    HDF5_INCLUDEDIR="/usr/include/hdf5" \
+    DOCKER_TAG=$BUILD_TAG \
+    DOCKER_ENV="prod" \
+    PS1="\u@$DOCKER_TAG:\w\$ " \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/lib" \
+    NODE_ENV="production" \
+    DEBIAN_FRONTEND="noninteractive" \
+    TMPDIR="/tmp" \
+    TF_CPP_MIN_LOG_LEVEL="2" \
+    MALLOC_ARENA_MAX="4" \
+    GOPATH="/go" \
+    GOBIN="/usr/local/bin" \
+    GO111MODULE="on" \
+    CGO_CFLAGS="-g -O2 -Wno-return-local-addr" \
+    PROG="flask"
 
 # Copy source to image.
 WORKDIR /app
@@ -42,21 +60,24 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
     echo 'APT::Get::Fix-Missing "true";' > /etc/apt/apt.conf.d/80fixmissing && \
     echo 'force-confold' > /etc/dpkg/dpkg.cfg.d/force-confold && \
     apt-get update && apt-get -qq dist-upgrade && \
-    apt-get -qq install curl build-essential libhdf5-dev bash nano rsync pkg-config && \
-    /app/scripts/cleanup.sh
+    apt-get -qq install \
+      curl build-essential libhdf5-dev make bash nano rsync pkg-config util-linux && \
+    echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
+    echo 'export PS1="\u@$DOCKER_TAG:\w\$ "' >> /etc/skel/.bashrc && \
+    cp /etc/skel/.bashrc /root/.bashrc && \
+    cleanup.sh
 
 # Install Rust.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-# Set environment variables.
-ENV PATH="/root/.cargo/bin:${PATH}" \
-    HDF5_INCLUDEDIR="/usr/include/hdf5"
-
 # Install Python dependencies.
-RUN pip install --no-cache-dir -r requirements.txt
+RUN requirements.sh
 
 # Expose HTTP port.
 EXPOSE 5000
+
+# Declare container entrypoint script.
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
 # Listen at 0.0.0.0:5000.
 CMD [ "flask", "--app", "app", "run", "--host", "0.0.0.0"]

@@ -25,7 +25,9 @@ python3 -m venv venv
 ./venv/bin/pip3 install --disable-pip-version-check -r requirements.txt
 ```
 
-## Current and Past Contributors
+## Contributors
+
+We would like to thank everyone involved, especially [Aatif Dawawala](https://github.com/Aatif-Dawawala) who got things rolling and contributed much of the initial code:
 
 - [Aatif Dawawala](https://github.com/Aatif-Dawawala)
 - [Niaz Faridani-Rad](https://github.com/derneuere)

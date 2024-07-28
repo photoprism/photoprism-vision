@@ -20,9 +20,10 @@ You can then install the required libraries in a virtual environment by either u
 
 ```bash
 cd describe
-python3 -m venv venv
+python3 -m venv ./venv
 . ./venv/bin/activate
-./venv/bin/pip3 install --disable-pip-version-check -r requirements.txt
+./venv/bin/pip install --disable-pip-version-check --upgrade pip
+./venv/bin/pip install --disable-pip-version-check -r requirements.txt
 ```
 
 ## Contributors

@@ -26,3 +26,4 @@ Thumbs.db
 .swp
 .tmp
 .env
+.init-lock

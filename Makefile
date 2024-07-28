@@ -23,13 +23,13 @@ release-describe:
 start:
 	docker compose --profile=all pull --ignore-pull-failures
 	docker compose up -d
-	docker compose logs -f
+	docker compose logs -f || true
 stop:
 	docker compose down -v
 terminal:
 	docker compose exec vision-describe bash
 logs:
-	docker compose logs -f
+	docker compose logs -f || true
 
 pip:
 ifeq ($(UNAME), Linux)

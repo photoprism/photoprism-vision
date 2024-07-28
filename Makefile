@@ -20,6 +20,9 @@ release: release-describe
 release-describe:
 	./build.sh describe linux/amd64,linux/arm64 $(BUILD_DATE)
 
+terminal:
+	docker compose exec vision-describe bash
+
 pip:
 ifeq ($(UNAME), Linux)
 	sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel

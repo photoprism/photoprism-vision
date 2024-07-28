@@ -18,6 +18,9 @@ docker-build:
 	docker compose --profile=all pull --ignore-pull-failures
 	docker compose build
 
+terminal:
+	docker compose exec vision-describe bash
+
 pip:
 ifeq ($(UNAME), Linux)
 	sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel

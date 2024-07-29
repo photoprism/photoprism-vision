@@ -8,9 +8,7 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-## Overview
-
-The aim of this project is to add multiple computer vision models for use with PhotoPrism. The project has multiple endpoints where a user can send either a POST or GET request with an image URL, and receive an image caption in response. Currently three models are integrated each with their own seperate endpoints, in addition to a default endpoint. The models are kosmos-2, blip-image-captioning large, and vit-gpt2-image-captioning.
+This repository contains supplementary computer vision models that can be used with PhotoPrism. The services provide a REST API that accepts either a POST or GET request with an image URL and returns a matching caption in response. The currently integrated models for this, each with its own endpoint, are *kosmos-2*, *blip-image-captioning large* and *vit-gpt2-image-captioning*.
 
 ## Installing Build Dependencies
 

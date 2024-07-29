@@ -138,6 +138,8 @@ BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
 
 This code block creates the paths for the models. This will be useful when downloading/loading the models. It uses os.path to assemble the correct path depending on if the system is Windows-based or UNIX-based.
 
+### Downloading Models
+
 ```python
 def download_model(model_name, save_path):
     if not os.path.exists(save_path):
@@ -168,6 +170,8 @@ download_model("Salesforce/blip-image-captioning-large", BLIP_MODEL_PATH)
 
 Here the code is downloading the models by calling the function in the previous block.
 
+### Loading Models
+
 ```python
 print("Loading models...")
 kosmosModel = AutoModelForVision2Seq.from_pretrained(KOSMOS_MODEL_PATH)
@@ -185,6 +189,8 @@ vitModel.to(device)
 ```
 
 Here the models are being loaded after they have been saved. 
+
+### Services
 
 ```python
 def kosmosGenerateResponse(url):
@@ -259,6 +265,8 @@ These are the services to generate the captions. There is a function for each mo
 
 ## API Endpoints
 
+### Default Endpoint
+
 ```python
 @app.route('/api/v1/vision/describe', methods=['POST', 'GET'])
 def generateResponse():
@@ -303,6 +311,8 @@ def generateResponse():
 ```
 
 This is the default endpoint. It checks to see if a model is specified, and if it is it calls the service associated with that model and returns the respose with the data. If a model isn't specified it uses kosmos-2.
+
+### Specific Endpoints
 
 ```python
 @app.route('/api/v1/vision/describe/kosmos-2/patch14-224', methods=['POST', 'GET'])

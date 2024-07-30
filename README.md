@@ -418,8 +418,8 @@ def blipController():
 
     if status == "ok":
         if id:
-            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
+            return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
+        return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
     
     return jsonify({"error", "Error during processing"})
 

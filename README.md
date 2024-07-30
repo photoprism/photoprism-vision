@@ -68,7 +68,8 @@ sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
 You can then install the required libraries in a virtual environment by either using the Makefiles we provide (i.e. run `make` in the main project directory or a subdirectory) or by manually running the following commands in a service directory, for example:
 
 ```bash
-cd describe
+git clone git@github.com:photoprism/photoprism-vision.git
+cd photoprism-vision/describe
 python3 -m venv ./venv
 . ./venv/bin/activate
 ./venv/bin/pip install --disable-pip-version-check --upgrade pip
@@ -77,10 +78,9 @@ python3 -m venv ./venv
 
 ## Usage
 
-Run the Python file `describe/app.py` to start the *describe* service after you have [installed the dependencies](#build-setup) (additional services, e.g. for OCR and tag generation, may be added in the future):
+Run the Python file `app.py` in the `describe` subdirectory to start the *describe* service after you have installed [the dependencies](#build-setup) (more services, e.g. for OCR and tag generation, may follow):
 
 ```bash
-cd describe
 ./venv/bin/python app.py
 ```
 

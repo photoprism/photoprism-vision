@@ -10,7 +10,7 @@ PhotoPrism: Computer Vision Models
 
 This repository contains supplementary computer vision models which can be accessed as [web services](#usage) by PhotoPrism and other applications. They provide a [REST API](#example-request) that accepts an image URL and returns, for example, a matching caption in response.
 
-The currently [integrated models](#models), each with [its own endpoint](#api-endpoints), are *kosmos-2*, *blip-image-captioning large* and *vit-gpt2-image-captioning*.
+The currently [integrated models](#models), each with [its own endpoint](#api-endpoints), are [kosmos-2](#kosmos-2), [vit-gpt2-image-captioning](#vit-gpt2), and [blip-image-captioning large](#blip).
 
 ## Table of Contents
 

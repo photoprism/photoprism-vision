@@ -8,7 +8,7 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-This repository contains supplementary computer vision models that are accessible as web services. They provide a REST API that accepts either a POST or a GET request with an image URL and returns, for example, a matching caption in response. The currently integrated models for this, each with its own endpoint, are *kosmos-2*, *blip-image-captioning large* and *vit-gpt2-image-captioning*.
+This repository contains supplementary computer vision models accessible as web services. They provide a REST API that accepts either a POST or a GET request with an image URL and returns, for example, a matching caption in response. The currently integrated models for this, each with its own endpoint, are *kosmos-2*, *blip-image-captioning large* and *vit-gpt2-image-captioning*.
 
 ## Table of Contents
 

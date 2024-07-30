@@ -33,6 +33,8 @@ ARG BUILD_TAG
 # Set environment variables.
 ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scripts:/root/.cargo/bin:/app/venv/bin" \
     HDF5_PKGCONFIG_NAME="hdf5" \
+    DOCKER_ARCH="${TARGETARCH}" \
+    DOCKER_PLATFORM="${TARGETPLATFORM}" \
     DOCKER_TAG="${BUILD_TAG}" \
     DOCKER_ENV="prod" \
     PS1="\u@${DOCKER_TAG}:\w\$ " \

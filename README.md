@@ -80,29 +80,53 @@ python3 -m venv ./venv
 
 ### Overview
 
-Once the app.py file is ran, it will start a server. This is the URl to send POST or GET requests to with the image URl. Post requests must be JSON are require a URL to be passed in using the "url" key. In addition, an id can be optionally passed in using the "id" parameter, which will be returned in the response. This is useful for asynchronous processing. If no id is passed in, a random one will be generated and sent in the resopnse. If using the default endpoint a "model" key can be passed in with the model name the user desires. GET requests must the same values as URl parameters, and the image URl must be encoded.
+Run the Python file `describe/app.py` to start the *describe* service. It listens on port 5000 by default and can be tested with the `curl` command (`curl.exe` under Windows), as shown in the following example:
 
-### Endpoints
+```bash
+curl -v -H "Content-Type: application/json" \
+  --data '{"url":"https://dl.photoprism.app/img/team/avatar.jpg"}' \
+  -X POST http://localhost:5000/api/v1/vision/describe
+```
 
-#### /api/v1/vision/describe
+The API endpoints for generating captions support `GET` and `POST` requests. At a minimum, an image `url` must be specified for this.
+
+In addition, a `model` name and an `id` can optionally be passed to allow asynchronous processing of requests (the same `id` is then returned with the response). If no `id` is passed, a random UUID v4 `id` is returned [with the response](#example-response).
+
+If a client sends `POST` requests, the request body must be JSON-encoded, e.g.:
+
+```json
+{
+    "url": "https://dl.photoprism.app/img/team/avatar.jpg",
+    "id": "3487da77-246e-4b4c-9437-67507177bcd7"
+}
+```
+
+Alternatively, you can also perform `GET` requests with URL-encoded query parameters, which is easier to test without a client, e.g.:
+
+> http://localhost:5000/api/v1/vision/describe?url=https%3A%2F%2Fdl.photoprism.app%2Fimg%2Fteam%2Favatar.jpg&id=3487da77-246e-4b4c-9437-67507177bcd7
+
+### API Endpoints
+
+#### `/api/v1/vision/describe`
 
 This is the default endpoint of the API. An image url should be passed in with the key "url", and optionally a "model" and/or "id" value can be passsed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to using the kosmos-2 model.
 
-#### /api/v1/vision/describe/kosmos-2/patch14-224
+#### `/api/v1/vision/describe/kosmos-2/patch14-224`
 
 This is the endpoint for the Kosmos-2 model. An image url should be passed in with the key "url", and optionally a "model" and/or "id" value can be passsed in.
 
-#### /api/v1/vision/describe/vit-gpt2-image-captioning
+#### `/api/v1/vision/describe/vit-gpt2-image-captioning`
 
 This is the endpoint for the VIT GPT-2 model. An image url should be passed in with the key "url", and optionally an "id" value can be passsed in.
 
-#### /api/v1/vision/describe/blip-image-captioning-large
+#### `/api/v1/vision/describe/blip-image-captioning-large`
 
 This is the endpoint for the BLIP model. An image url should be passed in with the key "url", and an "id" value can be passsed in.
 
-### Example request
+### Example Request
 
-POST /api/v1/vision/describe
+`POST /api/v1/vision/describe`
+
 ```json
 {
     "url": "https://images.rawpixel.com/image_png_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIzLTA5L3Jhd3BpeGVsX29mZmljZV8yOF9mZW1hbGVfbWluaW1hbF9yb2JvdF9mYWNlX29uX2RhcmtfYmFja2dyb3VuZF81ZDM3YjhlNy04MjRkLTQ0NWUtYjZjYy1hZmJkMDI3ZTE1NmYucG5n.png",
@@ -111,7 +135,8 @@ POST /api/v1/vision/describe
 }
 ```
 
-### Example response
+### Example Response
+
 ```json
 {
     "id": "b0db2187-7a09-438c-8649-a9c6c0f7b8a1",

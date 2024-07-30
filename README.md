@@ -8,22 +8,21 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-## Table of Contents
-1. [Overview](#overview)
-2. [Models](#models)
-3. [Dependencies and Frameworks](#dependencies-and-frameworks)
-4. [Installation](#installing-build-dependencies)
-5. [Usage](#usage)
-6. [Code Structure](#code-structure)
-7. [API Endpoints](#api-endpoints)
-8. [Contributing](#contributors)
-9. [Liscensing](#license-and-disclaimer)
-
-## Overview
-
 This repository contains supplementary computer vision models that can be used with PhotoPrism. The services provide a REST API that accepts either a POST or GET request with an image URL and returns a matching caption in response. The currently integrated models for this, each with its own endpoint, are *kosmos-2*, *blip-image-captioning large* and *vit-gpt2-image-captioning*.
 
+## Table of Contents
+
+1. [Models](#models)
+2. [Dependencies](#dependencies)
+3. [Build Setup](#build-setup)
+4. [Usage](#usage)
+5. [API Endpoints](#api-endpoints)
+6. [Code Structure](#code-structure)
+7. [Contributing](#contributors)
+8. [Licensing](#license-and-disclaimer)
+
 ## Models
+
 ### Kosmos-2
 
 Komsos-2 is the most accurate model of the three. It was developed by Microsoft, and this application uses the transformers implementation of the original model, as described in its [Huggingface](https://huggingface.co/microsoft/kosmos-2-patch14-224). This model was released in June 2023, and offers object detection and spatial reasoning. Kosmos-2 has very accurate accurate image captions (a .04-.1 increase in clip score when compared to the other two models offered), and is the default model used.
@@ -36,7 +35,7 @@ This model was released by [nlpconnect](https://huggingface.co/nlpconnect/vit-gp
 
 This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-image-captioning-large) in 2022. The primary purpose for this model was to increase both image understanding and text generation using novel techniques. It has achieved a +2.8% CIDEr result, and I've found this model to be more performant than VIT-GPT2, but Kosmos-2 to be slightly better (a .4 increase in CLIP score).
 
-## Dependencies and Frameworks
+## Dependencies
 
 ### Flask
 
@@ -58,7 +57,7 @@ This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-i
 
 [Numpy](https://numpy.org/) could be used for further hardware acceleration. It isn't included in the application by default to save space and keep from installing unnecessary dependencies. Numpy can be configured to use the GPU for computations. PyTorch already enables GPU processing, so numpy may not make a signficant difference.
 
-## Installing Build Dependencies
+## Build Setup
 
 Before installing the Python dependencies, please make sure that you have [Git](https://git-scm.com/downloads) and [Python 3.12+ (incl. pip)](https://www.python.org/downloads/) installed on your system, e.g. by running the following command on Ubuntu/Debian Linux:
 
@@ -77,8 +76,6 @@ python3 -m venv ./venv
 ```
 
 ## Usage
-
-### Overview
 
 Run the Python file `describe/app.py` to start the *describe* service. It listens on port 5000 by default and can be tested with the `curl` command (`curl.exe` under Windows), as shown in the following example:
 

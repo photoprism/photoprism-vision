@@ -15,6 +15,12 @@ KOSMOS_MODEL_PATH = os.path.join(MODEL_DIR, "kosmos-2-patch14-224")
 VIT_MODEL_PATH = os.path.join(MODEL_DIR, "vit-gpt2-image-captioning")
 BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
 
+# Model loaded?
+global VITLoaded
+global BLIPLoaded
+VITLoaded = False
+BLIPLoaded = False
+
 
 def download_model(model_name, save_path):
     if not os.path.exists(save_path):
@@ -45,16 +51,6 @@ print("Loading models...")
 kosmosModel = AutoModelForVision2Seq.from_pretrained(KOSMOS_MODEL_PATH)
 kosmosProcessor = AutoProcessor.from_pretrained(KOSMOS_MODEL_PATH)
 
-vitModel = VisionEncoderDecoderModel.from_pretrained(VIT_MODEL_PATH)
-vitFeature_extractor = ViTImageProcessor.from_pretrained(VIT_MODEL_PATH)
-vitTokenizer = AutoTokenizer.from_pretrained(VIT_MODEL_PATH)
-
-blipProcessor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
-blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-vitModel.to(device)
-
 def kosmosGenerateResponse(url):
     try:
         image = Image.open(requests.get(url, stream=True).raw)
@@ -83,6 +79,17 @@ def kosmosGenerateResponse(url):
     return "ok", processed_text
 
 def vitGenerateResponse(url):
+    global VITLoaded
+    global vitModel, vitFeature_extractor, vitTokenizer, device
+    if not VITLoaded:
+        vitModel = VisionEncoderDecoderModel.from_pretrained(VIT_MODEL_PATH)
+        vitFeature_extractor = ViTImageProcessor.from_pretrained(VIT_MODEL_PATH)
+        vitTokenizer = AutoTokenizer.from_pretrained(VIT_MODEL_PATH)
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        vitModel.to(device)
+        VITLoaded = True
+        
     vitModel.to(device)    
 
     max_length = 16
@@ -112,6 +119,14 @@ def vitGenerateResponse(url):
     return "ok", processed_text
 
 def blipGenerateResponse(url):
+    global BLIPLoaded
+    global blipProcessor, blipModel
+
+    if not BLIPLoaded:
+        blipProcessor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
+        blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
+        BLIPLoaded = True
+
     img_url = url
     raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
 

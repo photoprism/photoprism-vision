@@ -77,7 +77,14 @@ python3 -m venv ./venv
 
 ## Usage
 
-Run the Python file `describe/app.py` to start the *describe* service. It listens on port 5000 by default and can be tested with the `curl` command (`curl.exe` under Windows), as shown in the following example:
+Run the Python file `describe/app.py` to start the *describe* service after you have [installed the dependencies](#build-setup) (additional services, e.g. for OCR and tag generation, may be added in the future):
+
+```bash
+cd describe
+./venv/bin/python app.py
+```
+
+The service then listens on port 5000 by default and its API endpoints for generating captions support both `GET` and `POST` requests. It can be tested with the `curl` command (`curl.exe` on Windows) as shown in the example below:
 
 ```bash
 curl -v -H "Content-Type: application/json" \
@@ -85,9 +92,7 @@ curl -v -H "Content-Type: application/json" \
   -X POST http://localhost:5000/api/v1/vision/describe
 ```
 
-The API endpoints for generating captions support `GET` and `POST` requests. At a minimum, an image `url` must be specified for this.
-
-In addition, a `model` name and an `id` can optionally be passed to allow asynchronous processing of requests (the same `id` is then returned with the response). If no `id` is passed, a random UUID v4 `id` is returned [with the response](#example-response).
+At a minimum, a valid image `url` must be specified for this. In addition, a `model` name and an `id` [can be passed](#example-request) to allow asynchronous processing of requests (the same `id` is then returned with the response). If no `id` is passed, a random UUID v4 `id` is returned with [the response](#example-response).
 
 If your client submits `POST` requests, the request body must be [JSON-encoded](https://www.json.org/), e.g.:
 

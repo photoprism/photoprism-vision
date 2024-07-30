@@ -1,16 +1,16 @@
-### Intel-specific libraries not available for ARM64-based devices.
-### see https://pip.pypa.io/en/stable/reference/requirement-specifiers/
-# Intel® OpenMP* Runtime Library
-intel-openmp; sys_platform == 'linux' and platform_machine == 'amd64'
-# Intel® oneAPI Threading Building Blocks
-tbb; sys_platform == 'linux' and platform_machine == 'amd64'
-# Intel® oneAPI Math Kernel Library
-mkl; sys_platform == 'linux' and platform_machine == 'amd64'
-
-### Generally required Python packages.
+### Required Python packages.
 
 Flask
 pillow
 requests
 torch
 transformers
+
+### Intel-specific libraries not available for ARM64-based devices.
+### see https://pip.pypa.io/en/stable/reference/requirement-specifiers/
+### Intel® OpenMP* Runtime Library:
+# intel-openmp; sys_platform == 'linux' and platform_machine == 'amd64'
+### Intel® oneAPI Threading Building Blocks:
+# tbb; sys_platform == 'linux' and platform_machine == 'amd64'
+### Intel® oneAPI Math Kernel Library:
+# mkl; sys_platform == 'linux' and platform_machine == 'amd64'

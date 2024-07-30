@@ -89,7 +89,7 @@ The API endpoints for generating captions support `GET` and `POST` requests. At 
 
 In addition, a `model` name and an `id` can optionally be passed to allow asynchronous processing of requests (the same `id` is then returned with the response). If no `id` is passed, a random UUID v4 `id` is returned [with the response](#example-response).
 
-If a client sends `POST` requests, the request body must be JSON-encoded, e.g.:
+If your client submits `POST` requests, the request body must be [JSON-encoded](https://www.json.org/), e.g.:
 
 ```json
 {
@@ -98,7 +98,7 @@ If a client sends `POST` requests, the request body must be JSON-encoded, e.g.:
 }
 ```
 
-Alternatively, you can also perform `GET` requests with URL-encoded query parameters, which is easier to test without a client, e.g.:
+Alternatively, you can perform `GET` requests with URL-encoded query parameters, which is easier to test without an HTTP client:
 
 > http://localhost:5000/api/v1/vision/describe?url=https%3A%2F%2Fdl.photoprism.app%2Fimg%2Fteam%2Favatar.jpg&id=3487da77-246e-4b4c-9437-67507177bcd7
 

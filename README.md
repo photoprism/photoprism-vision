@@ -8,7 +8,7 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-This repository contains supplementary [computer vision models](#models) which can be accessed as [web services](#usage) by [PhotoPrism](https://github.com/photoprism/photoprism) and other applications. They provide a [REST API](#example-request) that accepts an image URL and returns, for example, a matching caption in response.
+This repository provides supplementary [computer vision models](#models) accessible as [web services](#usage) that [accept an image URL](#example-request) and return, for example, a [suitable caption](#example-response) in response.
 
 ## Table of Contents
 
@@ -292,7 +292,7 @@ def blipGenerateResponse(url):
 
 These are the services to generate the captions. There is a function for each model.
 
-## API Endpoints
+## Request Handlers
 
 ### Default Endpoint
 

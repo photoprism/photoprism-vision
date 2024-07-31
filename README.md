@@ -8,7 +8,7 @@ PhotoPrism: Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-This repository provides supplementary [computer vision models](#models) accessible as [web services](#usage) that [accept an image URL](#example-request) and return, for example, a [suitable caption](#example-response) in response.
+This repository provides supplementary [computer vision models](#models) which can be accessed as [web services](#usage) by [PhotoPrism](https://github.com/photoprism/photoprism) and other applications. Their API [accepts an image URL](#example-request) and returns, for example, a [suitable caption](#example-response) in response.
 
 ## Table of Contents
 

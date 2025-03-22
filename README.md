@@ -12,14 +12,35 @@ This repository [provides web services](#usage) with advanced [computer vision m
 
 ## Table of Contents
 
-1. [Models](#models)
-2. [Dependencies](#dependencies)
-3. [Build Setup](#build-setup)
-4. [Usage](#usage)
-5. [API Endpoints](#api-endpoints)
-6. [Code Structure](#code-structure)
-7. [Contributing](#contributors)
-8. [Licensing](#license-and-disclaimer)
+1. [Quick Start](#quick-start)
+2. [Models](#models)
+3. [Dependencies](#dependencies)
+4. [Build Setup](#build-setup)
+5. [Usage](#usage)
+6. [API Endpoints](#api-endpoints)
+7. [Code Structure](#code-structure)
+8. [Contributing](#contributors)
+9. [Licensing](#license-and-disclaimer)
+
+## Quick Start
+
+For the fastest setup on Ubuntu/Debian Linux:
+
+```bash
+# Install system requirements
+sudo apt-get update && sudo apt-get install -y git python3 python3-pip python3-venv python3-wheel
+
+# Clone repository and change into directory
+git clone git@github.com:photoprism/photoprism-vision.git
+cd photoprism-vision
+
+# Install all dependencies and start service
+make all start
+```
+
+The service will be available at http://localhost:5000
+
+For development and manual installation see the [Build Setup](#build-setup) section.
 
 ## Models
 
@@ -27,7 +48,7 @@ The currently integrated models, each with [its own endpoint](#api-endpoints), a
 
 ### Kosmos-2
 
-Komsos-2 is the most accurate model of the three. It was developed by Microsoft, and this application uses the transformers implementation of the original model, as described in its [Huggingface](https://huggingface.co/microsoft/kosmos-2-patch14-224). This model was released in June 2023, and offers object detection and spatial reasoning. Kosmos-2 has very accurate accurate image captions (a .04-.1 increase in clip score when compared to the other two models offered), and is the default model used.
+Kosmos-2 is the most accurate model of the three. It was developed by Microsoft, and this application uses the transformers implementation of the original model, as described in its [Huggingface](https://huggingface.co/microsoft/kosmos-2-patch14-224). This model was released in June 2023, and offers object detection and spatial reasoning. Kosmos-2 has very accurate image captions (a .04-.1 increase in clip score when compared to the other two models offered), and is the default model used.
 
 ### VIT-GPT2
 
@@ -217,7 +238,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 vitModel.to(device)
 ```
 
-Here the models are being loaded after they have been saved. 
+Here the models are being loaded after they have been saved.
 
 ### Services
 
@@ -250,7 +271,7 @@ def kosmosGenerateResponse(url):
     return "ok", processed_text
 
 def vitGenerateResponse(url):
-    vitModel.to(device)    
+    vitModel.to(device)
 
     max_length = 16
     num_beams = 4
@@ -312,7 +333,7 @@ def generateResponse():
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    
+
     if model == "kosmos-2" or not model:
         status, result = kosmosGenerateResponse(url)
         if status == "fetchError":
@@ -358,7 +379,7 @@ def kosmosController():
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    
+
     status, result = kosmosGenerateResponse(url)
 
     if status == "fetchError":
@@ -370,7 +391,7 @@ def kosmosController():
             return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
 
-    
+
 
 
 @app.route('/api/v1/vision/describe/vit-gpt2-image-captioning', methods=['POST', 'GET'])
@@ -381,20 +402,20 @@ def vitController():
         data = request.get_json()
     elif request.method == 'GET':
         data = request.args
-    
+
     url = data.get('url')
     id = data.get('id')
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    
+
     status, result = vitGenerateResponse(url)
 
     if status == "ok":
         if id:
             return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-    
+
     return jsonify({"error": "Error during processing"})
 
 
@@ -413,14 +434,14 @@ def blipController():
 
     if not url:
         return jsonify({"error": "URL is required"}), 400
-    
+
     status, result = blipGenerateResponse(url)
 
     if status == "ok":
         if id:
             return jsonify({"id": id, "result": {"caption": result}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
         return jsonify({"id": uuid.uuid4(), "result": {"caption": result}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
-    
+
     return jsonify({"error", "Error during processing"})
 
 ```
@@ -435,7 +456,7 @@ We would like to thank everyone involved, especially [Aatif Dawawala](https://gi
 - [Niaz Faridani-Rad](https://github.com/derneuere)
 
 [Learn more ›](https://github.com/photoprism/photoprism-vision/graphs/contributors)
- 
+
 ## Submitting Pull Requests
 
 Follow our [step-by-step guide](https://docs.photoprism.app/developer-guide/pull-requests) to learn how to submit new features, bug fixes, and documentation enhancements.

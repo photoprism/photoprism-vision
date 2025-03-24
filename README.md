@@ -99,6 +99,34 @@ python3 -m venv ./venv
 ./venv/bin/pip install --disable-pip-version-check -r requirements.txt
 ```
 
+## Docker Setup
+
+You can run the service using Docker:
+
+```bash
+# Build and start with docker-compose
+docker-compose up --build
+
+# Or build and run manually
+docker build -t photoprism-vision .
+docker run -p 5000:5000 -v $(pwd)/models:/app/models photoprism-vision
+```
+
+## Kubernetes Deployment
+
+Deploy to Kubernetes:
+
+```bash
+# Apply the manifests
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods
+
+# Get service URL
+kubectl get service photoprism-vision
+```
+
 ## Usage
 
 Run the Python file `app.py` in the `describe` subdirectory to start the *describe* service after you have installed [the dependencies](#build-setup) (more services, e.g. for OCR and tag generation, may follow):

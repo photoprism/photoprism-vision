@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photoprism-vision
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: photoprism-vision
+  template:
+    metadata:
+      labels:
+        app: photoprism-vision
+    spec:
+      containers:
+      - name: vision
+        image: photoprism-vision:latest
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: models-volume
+          mountPath: /app/models
+        - name: config-volume    # Add config volume mount
+          mountPath: /app/config
+        env:
+        - name: CONFIG_PATH
+          value: /app/config
+        - name: SAVE_SETTINGS
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      volumes:
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: models-pvc
+      - name: config-volume     # Add config volume
+        persistentVolumeClaim:
+          claimName: config-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photoprism-vision
+spec:
+  selector:
+    app: photoprism-vision
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: LoadBalancer

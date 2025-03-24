@@ -44,4 +44,70 @@ upgrade: upgrade-describe
 upgrade-describe:
 	(cd describe && make upgrade)
 
+# Container configuration
+IMAGE_NAME := photoprism-vision
+VERSION := latest
+DOCKER_REGISTRY := docker.io/photoprism
+PODMAN_REGISTRY := quay.io/photoprism
+
+# Choose container engine (docker or podman)
+ENGINE ?= docker
+
+# Common commands
+BUILD_CMD = $(ENGINE) build -t $(IMAGE_NAME):$(VERSION) .
+RUN_CMD = $(ENGINE) run -p 5000:5000 -v $(PWD)/models:/app/models
+PUSH_CMD = $(ENGINE) push
+
+.PHONY: all build run push clean k8s-deploy
+
+all: build
+
+# Build image with either docker or podman
+build:
+	$(BUILD_CMD)
+
+# Run container with GPU support
+run:
+	$(RUN_CMD) --gpus all $(IMAGE_NAME):$(VERSION)
+
+# Run without GPU
+run-cpu:
+	$(RUN_CMD) $(IMAGE_NAME):$(VERSION)
+
+# Push to registry based on engine
+push-docker:
+	$(BUILD_CMD)
+	$(PUSH_CMD) $(DOCKER_REGISTRY)/$(IMAGE_NAME):$(VERSION)
+
+push-podman:
+	$(BUILD_CMD)
+	$(PUSH_CMD) $(PODMAN_REGISTRY)/$(IMAGE_NAME):$(VERSION)
+
+# Deploy to kubernetes
+k8s-deploy:
+	kubectl apply -f k8s/
+
+# Clean up
+clean:
+	$(ENGINE) system prune -f
+	$(ENGINE) volume prune -f
+
+# Run tests
+test:
+	python3 -m pytest tests/
+
+# Install dependencies
+install:
+	cd describe && python3 -m venv ./venv && \
+	. ./venv/bin/activate && \
+	pip install -r requirements.txt
+
+# Example usage:
+# make ENGINE=docker build
+# make ENGINE=podman build
+# make run
+# make push-docker
+# make push-podman
+# make k8s-deploy
+
 .PHONY: all pip deps install build deploy deploy-amd64 docker-build venv upgrade upgrade-describe;

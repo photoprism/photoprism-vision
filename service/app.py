@@ -1,269 +1,184 @@
 import os
-from flask import Flask, jsonify, request
-import requests
-from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel, ViTImageProcessor, \
-    AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
-import torch
 import uuid
+from http import HTTPStatus
+from typing import Tuple, Any
 
-app = Flask(__name__)
+import requests
+import torch
+from PIL import Image
+from flask import Flask, jsonify, request, Response
+from transformers import (
+    AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel,
+    ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
+)
 
-# Define model paths
-MODEL_DIR = "models"
-KOSMOS_MODEL_PATH = os.path.join(MODEL_DIR, "kosmos-2-patch14-224")
-VIT_MODEL_PATH = os.path.join(MODEL_DIR, "vit-gpt2-image-captioning")
-BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
-
-# Model loaded?
-global VITLoaded
-global BLIPLoaded
-VITLoaded = False
-BLIPLoaded = False
-
-
-def download_model(model_name, save_path):
-    if not os.path.exists(save_path):
-        print(f"Downloading {model_name}...")
-        if model_name == "microsoft/kosmos-2-patch14-224":
-            AutoModelForVision2Seq.from_pretrained(model_name).save_pretrained(save_path)
-            AutoProcessor.from_pretrained(model_name).save_pretrained(save_path)
-        elif model_name == "nlpconnect/vit-gpt2-image-captioning":
-            VisionEncoderDecoderModel.from_pretrained(model_name).save_pretrained(save_path)
-            ViTImageProcessor.from_pretrained(model_name).save_pretrained(save_path)
-            AutoTokenizer.from_pretrained(model_name).save_pretrained(save_path)
-        elif model_name == "Salesforce/blip-image-captioning-large":
-            BlipForConditionalGeneration.from_pretrained(model_name).save_pretrained(save_path)
-            BlipProcessor.from_pretrained(model_name).save_pretrained(save_path)
-        print(f"{model_name} downloaded and saved to {save_path}")
-    else:
-        print(f"{model_name} already exists at {save_path}")
+# Configuration Constants
+MODEL_CONFIG = {
+    'BASE_DIR': 'models',
+    'MODELS': {
+        'kosmos-2': {
+            'path': 'models/kosmos-2-patch14-224',
+            'source': 'microsoft/kosmos-2-patch14-224',
+            'version': 'patch14-224'
+        },
+        'vit-gpt2': {
+            'path': 'models/vit-gpt2-image-captioning',
+            'source': 'nlpconnect/vit-gpt2-image-captioning',
+            'version': 'latest'
+        },
+        'blip': {
+            'path': 'models/blip-image-captioning-large',
+            'source': 'Salesforce/blip-image-captioning-large',
+            'version': 'latest'
+        }
+    }
+}
 
 
-# Download models
-os.makedirs(MODEL_DIR, exist_ok=True)
-download_model("microsoft/kosmos-2-patch14-224", KOSMOS_MODEL_PATH)
-download_model("nlpconnect/vit-gpt2-image-captioning", VIT_MODEL_PATH)
-download_model("Salesforce/blip-image-captioning-large", BLIP_MODEL_PATH)
+class ModelManager:
+    def __init__(self):
+        self.models = {}
+        self.processors = {}
+        self._initialize_models()
 
-# Load models
-print("Loading models...")
-kosmosModel = AutoModelForVision2Seq.from_pretrained(KOSMOS_MODEL_PATH)
-kosmosProcessor = AutoProcessor.from_pretrained(KOSMOS_MODEL_PATH)
+    def _initialize_models(self):
+        os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
+        self._download_and_load_models()
 
-def kosmosGenerateResponse(url):
-    try:
-        image = Image.open(requests.get(url, stream=True).raw)
-    except Exception as e:
-        return "fetchError", f"Unable to fetch image: {str(e)}"
+    def _download_and_load_models(self):
+        for model_name, config in MODEL_CONFIG['MODELS'].items():
+            if not os.path.exists(config['path']):
+                self._download_model(config['source'], config['path'])
+            self._load_model(model_name, config['path'])
 
-    prompt = "<grounding>An image of"
+    @staticmethod
+    def _download_model(source: str, path: str):
+        print(f"Downloading {source}...")
+        if 'kosmos' in source:
+            AutoModelForVision2Seq.from_pretrained(source).save_pretrained(path)
+            AutoProcessor.from_pretrained(source).save_pretrained(path)
+        elif 'vit-gpt2' in source:
+            VisionEncoderDecoderModel.from_pretrained(source).save_pretrained(path)
+            ViTImageProcessor.from_pretrained(source).save_pretrained(path)
+            AutoTokenizer.from_pretrained(source).save_pretrained(path)
+        elif 'blip' in source:
+            BlipForConditionalGeneration.from_pretrained(source).save_pretrained(path)
+            BlipProcessor.from_pretrained(source).save_pretrained(path)
 
-    try:
-        inputs = kosmosProcessor(text=prompt, images=image, return_tensors="pt")
-        generated_ids = kosmosModel.generate(
+    def _load_model(self, model_name: str, path: str):
+        if model_name == 'kosmos-2':
+            self.models[model_name] = AutoModelForVision2Seq.from_pretrained(path)
+            self.processors[model_name] = AutoProcessor.from_pretrained(path)
+        elif model_name == 'vit-gpt2':
+            self.models[model_name] = VisionEncoderDecoderModel.from_pretrained(path)
+            self.processors[model_name] = {
+                'feature_extractor': ViTImageProcessor.from_pretrained(path),
+                'tokenizer': AutoTokenizer.from_pretrained(path),
+                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            }
+            self.models[model_name].to(self.processors[model_name]['device'])
+        elif model_name == 'blip':
+            self.models[model_name] = BlipForConditionalGeneration.from_pretrained(path)
+            self.processors[model_name] = BlipProcessor.from_pretrained(path)
+
+    def process_image(self, model_name: str, image_url: str) -> Tuple[str, str]:
+        try:
+            image = self._load_image(image_url)
+            if model_name == 'kosmos-2':
+                return self._process_kosmos(image)
+            elif model_name == 'vit-gpt2':
+                return self._process_vit(image)
+            elif model_name == 'blip':
+                return self._process_blip(image)
+            raise ValueError(f"Unknown model: {model_name}")
+        except Exception as e:
+            return 'error', str(e)
+
+    @staticmethod
+    def _load_image(url: str) -> Image:
+        return Image.open(requests.get(url, stream=True).raw).convert('RGB')
+
+    def _process_kosmos(self, image: Image) -> Tuple[str, str]:
+        prompt = "<grounding>An image of"
+        inputs = self.processors['kosmos-2'](text=prompt, images=image, return_tensors="pt")
+        generated_ids = self.models['kosmos-2'].generate(
             pixel_values=inputs["pixel_values"],
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
-            image_embeds=None,
             image_embeds_position_mask=inputs["image_embeds_position_mask"],
-            use_cache=True,
             max_new_tokens=128,
         )
+        generated_text = self.processors['kosmos-2'].batch_decode(generated_ids, skip_special_tokens=True)[0]
+        processed_text, _ = self.processors['kosmos-2'].post_process_generation(generated_text)
+        return 'ok', processed_text
 
-        generated_text = kosmosProcessor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-        processed_text, entities = kosmosProcessor.post_process_generation(generated_text)
-    except Exception as e:
-        return "processingError", f"Error during processing: {str(e)}"
+    def _process_vit(self, image: Image) -> Tuple[str, str]:
+        max_length = 16
+        num_beams = 4
+        gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
 
-    return "ok", processed_text
+        def predict_step(img: Image):
+            final_image = img
+            if image.mode != "RGB":
+                final_image = image.convert(mode="RGB")
 
-def vitGenerateResponse(url):
-    global VITLoaded
-    global vitModel, vitFeature_extractor, vitTokenizer, device
-    if not VITLoaded:
-        vitModel = VisionEncoderDecoderModel.from_pretrained(VIT_MODEL_PATH)
-        vitFeature_extractor = ViTImageProcessor.from_pretrained(VIT_MODEL_PATH)
-        vitTokenizer = AutoTokenizer.from_pretrained(VIT_MODEL_PATH)
+            processor = self.processors["vit-gpt2"]
+            pixel_values = processor["feature_extractor"](images=[final_image],
+                                                          return_tensors="pt").pixel_values
+            device = processor["device"]
+            pixel_values = pixel_values.to(device)
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        vitModel.to(device)
-        VITLoaded = True
-        
-    vitModel.to(device)    
+            output_ids = self.models["vit-gpt2"].generate(pixel_values, **gen_kwargs)
 
-    max_length = 16
-    num_beams = 4
-    gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
+            preds = processor["tokenizer"].batch_decode(output_ids, skip_special_tokens=True)
+            preds = [pred.strip() for pred in preds]
+            return preds
 
-    def predict_step(url):
-        image = Image.open(requests.get(url, stream=True).raw)
-        images = []
+        processed_text = predict_step(image)
 
-        if image.mode != "RGB":
-            image = image.convert(mode="RGB")
+        return "ok", processed_text[0]
 
-        images.append(image)
+    def _process_blip(self, image: Image) -> Tuple[str, str]:
+        inputs = self.processors['blip'](images=image, return_tensors="pt")
+        out = self.models['blip'].generate(**inputs)
+        processed_text = self.processors['blip'].decode(out[0], skip_special_tokens=True)
+        return 'ok', processed_text
 
-        pixel_values = vitFeature_extractor(images=images, return_tensors="pt").pixel_values
-        pixel_values = pixel_values.to(device)
 
-        output_ids = vitModel.generate(pixel_values, **gen_kwargs)
+app = Flask(__name__)
+model_manager = ModelManager()
 
-        preds = vitTokenizer.batch_decode(output_ids, skip_special_tokens=True)
-        preds = [pred.strip() for pred in preds]
-        return preds
 
-    processed_text = predict_step(url)  # returns prediction
+def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response, int]:
+    return jsonify(data), status_code
 
-    return "ok", processed_text
-
-def blipGenerateResponse(url):
-    global BLIPLoaded
-    global blipProcessor, blipModel
-
-    if not BLIPLoaded:
-        blipProcessor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
-        blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
-        BLIPLoaded = True
-
-    img_url = url
-    raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
-
-    inputs = blipProcessor(raw_image, return_tensors="pt")
-
-    out = blipModel.generate(**inputs)
-    processed_text = blipProcessor.decode(out[0], skip_special_tokens=True)
-
-    return "ok", processed_text
 
 @app.route('/api/v1/vision/caption', methods=['POST', 'GET'])
-def generateResponse():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    model = data.get('model')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    if model == "kosmos-2" or not model:
-        status, result = kosmosGenerateResponse(url)
-        if status == "fetchError":
-            return jsonify({"error": result}), 500
-        elif status == "processingError":
-            return jsonify({"error": result}), 500
-        elif status == "ok":
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-    elif model == "vit-gpt2-image-captioning":
-        status, result = vitGenerateResponse(url)
-        if status == "ok":
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-        return jsonify({"error": "Error during processing"})
-    elif model == "blip-image-captioning-large":
-        status, result = blipGenerateResponse(url)
-        if status =='ok':
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-        return jsonify({"error": "Error during processing"})        
+def default_process_image_caption() -> Tuple[Response, int]:
+    return process_image_caption("kosmos-2")
 
 
+@app.route('/api/v1/vision/caption/<model_name>', methods=['POST', 'GET'])
+def process_image_caption(model_name: str) -> Tuple[Response, int]:
+    try:
+        data = request.get_json() if request.is_json else request.args
+        if not data.get('url'):
+            return create_response({'error': 'URL is required'}, HTTPStatus.BAD_REQUEST)
 
-
-
-
-
-@app.route('/api/v1/vision/caption/kosmos-2/patch14-224', methods=['POST', 'GET'])
-def kosmosController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = kosmosGenerateResponse(url)
-
-    if status == "fetchError":
-        return jsonify({"error": result}), 500
-    elif status == "processingError":
-        return jsonify({"error": result}), 500
-    elif status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-
-    
-
-
-@app.route('/api/v1/vision/caption/vit-gpt2-image-captioning', methods=['POST', 'GET'])
-def vitController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-    
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = vitGenerateResponse(url)
-
-    if status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-    
-    return jsonify({"error": "Error during processing"})
-
-
-
-@app.route('/api/v1/vision/caption/blip-image-captioning-large', methods=['POST', 'GET'])
-def blipController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = blipGenerateResponse(url)
-
-    if status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
-    
-    return jsonify({"error", "Error during processing"})
-
-
+        status, result = model_manager.process_image(model_name, data['url'])
+        if status == 'ok':
+            response_data = {
+                'id': data.get('id', str(uuid.uuid4())),
+                'result': {'caption': {'text': result}},
+                'model': {
+                    'name': model_name,
+                    'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                }
+            }
+            return create_response(response_data, HTTPStatus.OK)
+        return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 if __name__ == '__main__':

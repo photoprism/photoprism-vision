@@ -12,6 +12,8 @@ from transformers import (
     ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
 )
 
+from service.ollama_integration import ollama_caption
+
 # Configuration Constants
 MODEL_CONFIG = {
     'BASE_DIR': 'models',
@@ -90,6 +92,8 @@ class ModelManager:
                 return self._process_vit(image)
             elif model_name == 'blip':
                 return self._process_blip(image)
+            elif model_name == 'ollama':
+                return ollama_caption(image)
             raise ValueError(f"Unknown model: {model_name}")
         except Exception as e:
             return 'error', str(e)

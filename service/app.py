@@ -1,10 +1,13 @@
+import base64
+import io
 import os
 import uuid
 from http import HTTPStatus
-from typing import Tuple, Any
+from typing import Tuple, Any, Union, overload
 
 import requests
 import torch
+from PIL.Image import Image as ImageType
 from PIL import Image
 from flask import Flask, jsonify, request, Response
 from transformers import (
@@ -12,7 +15,7 @@ from transformers import (
     ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
 )
 
-from service.ollama_integration import ollama_caption
+from ollama_integration import ollama_caption
 
 # Configuration Constants
 MODEL_CONFIG = {
@@ -83,9 +86,23 @@ class ModelManager:
             self.models[model_name] = BlipForConditionalGeneration.from_pretrained(path)
             self.processors[model_name] = BlipProcessor.from_pretrained(path)
 
+    @overload
     def process_image(self, model_name: str, image_url: str) -> Tuple[str, str]:
+        ...
+
+    @overload
+    def process_image(self, model_name: str, image: ImageType) -> Tuple[str, str]:
+        ...
+
+    def process_image(self, model_name: str, data: Union[str, ImageType]) -> Tuple[str, str]:
+        image = None
+        if isinstance(data, str):
+            image = self._load_image(data)
+        elif isinstance(data, ImageType):
+            image = data
+
+        # TODO better distinction between model and provider. Strategy pattern?
         try:
-            image = self._load_image(image_url)
             if model_name == 'kosmos-2':
                 return self._process_kosmos(image)
             elif model_name == 'vit-gpt2':
@@ -102,7 +119,7 @@ class ModelManager:
     def _load_image(url: str) -> Image:
         return Image.open(requests.get(url, stream=True).raw).convert('RGB')
 
-    def _process_kosmos(self, image: Image) -> Tuple[str, str]:
+    def _process_kosmos(self, image: ImageType) -> Tuple[str, str]:
         prompt = "<grounding>An image of"
         inputs = self.processors['kosmos-2'](text=prompt, images=image, return_tensors="pt")
         generated_ids = self.models['kosmos-2'].generate(
@@ -116,12 +133,12 @@ class ModelManager:
         processed_text, _ = self.processors['kosmos-2'].post_process_generation(generated_text)
         return 'ok', processed_text
 
-    def _process_vit(self, image: Image) -> Tuple[str, str]:
+    def _process_vit(self, image: ImageType) -> Tuple[str, str]:
         max_length = 16
         num_beams = 4
         gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
 
-        def predict_step(img: Image):
+        def predict_step(img: ImageType):
             final_image = img
             if image.mode != "RGB":
                 final_image = image.convert(mode="RGB")
@@ -142,7 +159,7 @@ class ModelManager:
 
         return "ok", processed_text[0]
 
-    def _process_blip(self, image: Image) -> Tuple[str, str]:
+    def _process_blip(self, image: ImageType) -> Tuple[str, str]:
         inputs = self.processors['blip'](images=image, return_tensors="pt")
         out = self.models['blip'].generate(**inputs)
         processed_text = self.processors['blip'].decode(out[0], skip_special_tokens=True)
@@ -166,21 +183,36 @@ def default_process_image_caption() -> Tuple[Response, int]:
 def process_image_caption(model_name: str) -> Tuple[Response, int]:
     try:
         data = request.get_json() if request.is_json else request.args
-        if not data.get('url'):
-            return create_response({'error': 'URL is required'}, HTTPStatus.BAD_REQUEST)
-
-        status, result = model_manager.process_image(model_name, data['url'])
-        if status == 'ok':
-            response_data = {
-                'id': data.get('id', str(uuid.uuid4())),
-                'result': {'caption': {'text': result}},
-                'model': {
-                    'name': model_name,
-                    'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+        if data.get('url'):
+            status, result = model_manager.process_image(model_name, data['url'])
+            if status == 'ok':
+                response_data = {
+                    'id': data.get('id', str(uuid.uuid4())),
+                    'result': {'caption': {'text': result}},
+                    'model': {
+                        'name': model_name,
+                        'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                    }
                 }
-            }
-            return create_response(response_data, HTTPStatus.OK)
-        return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
+                return create_response(response_data, HTTPStatus.OK)
+        elif data.get('images'):
+            image_data = data['images'][0].split(',')
+            if len(image_data) == 2:
+                image_type, image_data = image_data
+                if image_type == 'data:image/jpeg;base64':
+                    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+                    status, result = model_manager.process_image(model_name, image)
+                    if status == 'ok':
+                        response_data = {
+                            'id': data.get('id', str(uuid.uuid4())),
+                            'result': {'caption': {'text': result}},
+                            'model': {
+                                'name': model_name,
+                                'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                            }
+                        }
+                        return create_response(response_data, HTTPStatus.OK)
+        return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
     except Exception as e:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 

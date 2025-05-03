@@ -3,7 +3,7 @@ import io
 from typing import Tuple
 
 import ollama
-from PIL import Image
+from PIL.Image import Image
 
 
 def ollama_caption(image: Image) -> Tuple[str, str]:

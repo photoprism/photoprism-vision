@@ -15,10 +15,10 @@ class Model(BaseModel):
 
 
 class Label(BaseModel):
-    name: str | None = None
+    name: str
     source: str | None = None
     priority: int | None = None
-    confidence: float | None = None
+    confidence: float
     topicality: float | None = None
     categories: list[str] | None = None
 

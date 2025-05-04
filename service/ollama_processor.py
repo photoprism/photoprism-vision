@@ -13,7 +13,7 @@ from api import Labels
 logger = logging.getLogger(__name__)
 
 caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Describe this image in detail')
-labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 5 worded labels for this image')
+labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for this image')
 
 
 class OllamaImageProcessor(ImageProcessor):

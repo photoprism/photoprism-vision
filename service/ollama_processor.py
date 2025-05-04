@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 from typing import Tuple, Union
 
 import ollama
@@ -7,6 +8,7 @@ from PIL.Image import Image
 
 from processor import ImageProcessor
 
+prompt = os.environ.get('OLLAMA_PROMPT', 'Describe this image in detail')
 
 class OllamaImageProcessor(ImageProcessor):
 
@@ -26,7 +28,7 @@ class OllamaImageProcessor(ImageProcessor):
 
             response = ollama.generate(model=model_name,
                                        # TODO externalize prompt to API - user defined/ENV - default/hardcoded default
-                                       prompt='Describe this image in detail',
+                                       prompt=prompt,
                                        images=[base64_image])
             if response and response.response:
                 return 'ok', response.response.strip()

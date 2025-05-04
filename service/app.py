@@ -1,176 +1,45 @@
-import base64
-import io
-import os
 import uuid
 from http import HTTPStatus
-from typing import Tuple, Any, Union, overload
+from typing import Any, Tuple
 
-import requests
-import torch
-from PIL.Image import Image as ImageType
-from PIL import Image
-from flask import Flask, jsonify, request, Response
-from transformers import (
-    AutoProcessor, AutoModelForVision2Seq, VisionEncoderDecoderModel,
-    ViTImageProcessor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
-)
+from pydantic import BaseModel
 
-from ollama_integration import ollama_caption
+from flask import Flask, Response, jsonify, request
 
-# Configuration Constants
-MODEL_CONFIG = {
-    'BASE_DIR': 'models',
-    'MODELS': {
-        'kosmos-2': {
-            'path': 'models/kosmos-2-patch14-224',
-            'source': 'microsoft/kosmos-2-patch14-224',
-            'version': 'patch14-224'
-        },
-        'vit-gpt2': {
-            'path': 'models/vit-gpt2-image-captioning',
-            'source': 'nlpconnect/vit-gpt2-image-captioning',
-            'version': 'latest'
-        },
-        'blip': {
-            'path': 'models/blip-image-captioning-large',
-            'source': 'Salesforce/blip-image-captioning-large',
-            'version': 'latest'
-        }
-    }
-}
-
-
-class ModelManager:
-    def __init__(self):
-        self.models = {}
-        self.processors = {}
-        self._initialize_models()
-
-    def _initialize_models(self):
-        os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
-        self._download_and_load_models()
-
-    def _download_and_load_models(self):
-        for model_name, config in MODEL_CONFIG['MODELS'].items():
-            if not os.path.exists(config['path']):
-                self._download_model(config['source'], config['path'])
-            self._load_model(model_name, config['path'])
-
-    @staticmethod
-    def _download_model(source: str, path: str):
-        print(f"Downloading {source}...")
-        if 'kosmos' in source:
-            AutoModelForVision2Seq.from_pretrained(source).save_pretrained(path)
-            AutoProcessor.from_pretrained(source).save_pretrained(path)
-        elif 'vit-gpt2' in source:
-            VisionEncoderDecoderModel.from_pretrained(source).save_pretrained(path)
-            ViTImageProcessor.from_pretrained(source).save_pretrained(path)
-            AutoTokenizer.from_pretrained(source).save_pretrained(path)
-        elif 'blip' in source:
-            BlipForConditionalGeneration.from_pretrained(source).save_pretrained(path)
-            BlipProcessor.from_pretrained(source).save_pretrained(path)
-
-    def _load_model(self, model_name: str, path: str):
-        if model_name == 'kosmos-2':
-            self.models[model_name] = AutoModelForVision2Seq.from_pretrained(path)
-            self.processors[model_name] = AutoProcessor.from_pretrained(path)
-        elif model_name == 'vit-gpt2':
-            self.models[model_name] = VisionEncoderDecoderModel.from_pretrained(path)
-            self.processors[model_name] = {
-                'feature_extractor': ViTImageProcessor.from_pretrained(path),
-                'tokenizer': AutoTokenizer.from_pretrained(path),
-                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            }
-            self.models[model_name].to(self.processors[model_name]['device'])
-        elif model_name == 'blip':
-            self.models[model_name] = BlipForConditionalGeneration.from_pretrained(path)
-            self.processors[model_name] = BlipProcessor.from_pretrained(path)
-
-    @overload
-    def process_image(self, model_name: str, image_url: str) -> Tuple[str, str]:
-        ...
-
-    @overload
-    def process_image(self, model_name: str, image: ImageType) -> Tuple[str, str]:
-        ...
-
-    def process_image(self, model_name: str, data: Union[str, ImageType]) -> Tuple[str, str]:
-        image = None
-        if isinstance(data, str):
-            image = self._load_image(data)
-        elif isinstance(data, ImageType):
-            image = data
-
-        # TODO better distinction between model and provider. Strategy pattern?
-        try:
-            if model_name == 'kosmos-2':
-                return self._process_kosmos(image)
-            elif model_name == 'vit-gpt2':
-                return self._process_vit(image)
-            elif model_name == 'blip':
-                return self._process_blip(image)
-            elif model_name == 'ollama':
-                return ollama_caption(image)
-            raise ValueError(f"Unknown model: {model_name}")
-        except Exception as e:
-            return 'error', str(e)
-
-    @staticmethod
-    def _load_image(url: str) -> Image:
-        return Image.open(requests.get(url, stream=True).raw).convert('RGB')
-
-    def _process_kosmos(self, image: ImageType) -> Tuple[str, str]:
-        prompt = "<grounding>An image of"
-        inputs = self.processors['kosmos-2'](text=prompt, images=image, return_tensors="pt")
-        generated_ids = self.models['kosmos-2'].generate(
-            pixel_values=inputs["pixel_values"],
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            image_embeds_position_mask=inputs["image_embeds_position_mask"],
-            max_new_tokens=128,
-        )
-        generated_text = self.processors['kosmos-2'].batch_decode(generated_ids, skip_special_tokens=True)[0]
-        processed_text, _ = self.processors['kosmos-2'].post_process_generation(generated_text)
-        return 'ok', processed_text
-
-    def _process_vit(self, image: ImageType) -> Tuple[str, str]:
-        max_length = 16
-        num_beams = 4
-        gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
-
-        def predict_step(img: ImageType):
-            final_image = img
-            if image.mode != "RGB":
-                final_image = image.convert(mode="RGB")
-
-            processor = self.processors["vit-gpt2"]
-            pixel_values = processor["feature_extractor"](images=[final_image],
-                                                          return_tensors="pt").pixel_values
-            device = processor["device"]
-            pixel_values = pixel_values.to(device)
-
-            output_ids = self.models["vit-gpt2"].generate(pixel_values, **gen_kwargs)
-
-            preds = processor["tokenizer"].batch_decode(output_ids, skip_special_tokens=True)
-            preds = [pred.strip() for pred in preds]
-            return preds
-
-        processed_text = predict_step(image)
-
-        return "ok", processed_text[0]
-
-    def _process_blip(self, image: ImageType) -> Tuple[str, str]:
-        inputs = self.processors['blip'](images=image, return_tensors="pt")
-        out = self.models['blip'].generate(**inputs)
-        processed_text = self.processors['blip'].decode(out[0], skip_special_tokens=True)
-        return 'ok', processed_text
-
+from local_processor import MODEL_CONFIG
+from local_processor import LocalImageProcessor
+from ollama_processor import OllamaImageProcessor
+from utils import decode_image, load_image
 
 app = Flask(__name__)
-model_manager = ModelManager()
+image_processors = [
+    LocalImageProcessor(),
+    OllamaImageProcessor(),
+]
 
 
-def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response, int]:
+class Text(BaseModel):
+    text: str
+
+
+class Caption(BaseModel):
+    caption: Text
+
+
+class Model(BaseModel):
+    name: str
+    version: str
+
+
+class CaptionResponse(BaseModel):
+    id: str
+    result: Caption
+    model: Model
+
+
+def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response | str, int]:
+    if isinstance(data, CaptionResponse):
+        return data.model_dump_json(), status_code
     return jsonify(data), status_code
 
 
@@ -183,36 +52,30 @@ def default_process_image_caption() -> Tuple[Response, int]:
 def process_image_caption(model_name: str) -> Tuple[Response, int]:
     try:
         data = request.get_json() if request.is_json else request.args
+        image = None
         if data.get('url'):
-            status, result = model_manager.process_image(model_name, data['url'])
-            if status == 'ok':
-                response_data = {
-                    'id': data.get('id', str(uuid.uuid4())),
-                    'result': {'caption': {'text': result}},
-                    'model': {
-                        'name': model_name,
-                        'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
-                    }
-                }
-                return create_response(response_data, HTTPStatus.OK)
+            image = load_image(data['url'])
         elif data.get('images'):
-            image_data = data['images'][0].split(',')
-            if len(image_data) == 2:
-                image_type, image_data = image_data
-                if image_type == 'data:image/jpeg;base64':
-                    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
-                    status, result = model_manager.process_image(model_name, image)
-                    if status == 'ok':
-                        response_data = {
-                            'id': data.get('id', str(uuid.uuid4())),
-                            'result': {'caption': {'text': result}},
-                            'model': {
-                                'name': model_name,
-                                'version': MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
-                            }
-                        }
-                        return create_response(response_data, HTTPStatus.OK)
-        return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
+            image = decode_image(data['images'][0])
+
+        if not image:
+            return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
+
+        for processor in image_processors:
+            if processor.can_process(model_name):
+                status, result = processor.generate_caption(model_name, image)
+                if status == 'ok':
+                    response_data = CaptionResponse(
+                        id=data.get('id', str(uuid.uuid4())),
+                        result=Caption(caption=Text(text=result)),
+                        model=Model(
+                            name=model_name,
+                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                        ),
+                    )
+                    return create_response(response_data, HTTPStatus.OK)
+                return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
+        return create_response({'error': f"There is no image processor that has {model_name} available."}, HTTPStatus.BAD_REQUEST)
     except Exception as e:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 

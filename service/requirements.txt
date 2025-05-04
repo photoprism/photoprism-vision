@@ -5,8 +5,9 @@ pillow
 requests
 torch
 transformers
-hf_xet
+huggingface[hf_xet]
 ollama
+pydantic
 
 ### Intel-specific libraries not available for ARM64-based devices.
 ### see https://pip.pypa.io/en/stable/reference/requirement-specifiers/

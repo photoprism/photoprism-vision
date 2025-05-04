@@ -1,15 +1,20 @@
+import logging
 import uuid
 from http import HTTPStatus
 from typing import Any, Tuple
-
-from pydantic import BaseModel
 
 from flask import Flask, Response, jsonify, request
 
 from local_processor import MODEL_CONFIG
 from local_processor import LocalImageProcessor
 from ollama_processor import OllamaImageProcessor
+from api import ApiResponse, Caption, Model, Text
 from utils import decode_image, load_image
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = Flask(__name__)
 image_processors = [
@@ -18,27 +23,8 @@ image_processors = [
 ]
 
 
-class Text(BaseModel):
-    text: str
-
-
-class Caption(BaseModel):
-    caption: Text
-
-
-class Model(BaseModel):
-    name: str
-    version: str
-
-
-class CaptionResponse(BaseModel):
-    id: str
-    result: Caption
-    model: Model
-
-
 def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response | str, int]:
-    if isinstance(data, CaptionResponse):
+    if isinstance(data, ApiResponse):
         return data.model_dump_json(), status_code
     return jsonify(data), status_code
 
@@ -65,7 +51,7 @@ def process_image_caption(model_name: str) -> Tuple[Response, int]:
             if processor.can_process(model_name):
                 status, result = processor.generate_caption(model_name, image)
                 if status == 'ok':
-                    response_data = CaptionResponse(
+                    response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
                         result=Caption(caption=Text(text=result)),
                         model=Model(
@@ -75,7 +61,41 @@ def process_image_caption(model_name: str) -> Tuple[Response, int]:
                     )
                     return create_response(response_data, HTTPStatus.OK)
                 return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
-        return create_response({'error': f"There is no image processor that has {model_name} available."}, HTTPStatus.BAD_REQUEST)
+        return create_response({'error': f"There is no image processor that has {model_name} available."},
+                               HTTPStatus.BAD_REQUEST)
+    except Exception as e:
+        return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
+@app.route('/api/v1/vision/labels/<model_name>', methods=['POST', 'GET'])
+def process_image_labels(model_name: str) -> Tuple[Response, int]:
+    try:
+        data = request.get_json() if request.is_json else request.args
+        image = None
+        if data.get('url'):
+            image = load_image(data['url'])
+        elif data.get('images'):
+            image = decode_image(data['images'][0])
+
+        if not image:
+            return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
+
+        for processor in image_processors:
+            if processor.can_process(model_name):
+                status, result = processor.generate_labels(model_name, image)
+                if status == 'ok':
+                    response_data = ApiResponse(
+                        id=data.get('id', str(uuid.uuid4())),
+                        result=result,
+                        model=Model(
+                            name=model_name,
+                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                        ),
+                    )
+                    return create_response(response_data, HTTPStatus.OK)
+                return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
+        return create_response({'error': f"There is no image processor that has {model_name} available."},
+                               HTTPStatus.BAD_REQUEST)
     except Exception as e:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 

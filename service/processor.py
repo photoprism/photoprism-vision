@@ -16,3 +16,11 @@ class ImageProcessor(ABC):
         :param image: Image object
         """
         pass
+
+    @abstractmethod
+    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, str]:
+        """
+        :param model_name: name of requested model
+        :param image: Image object
+        """
+        pass

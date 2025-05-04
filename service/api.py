@@ -1,0 +1,33 @@
+from pydantic import BaseModel
+
+
+class Text(BaseModel):
+    text: str
+
+
+class Caption(BaseModel):
+    caption: Text
+
+
+class Model(BaseModel):
+    name: str
+    version: str
+
+
+class Label(BaseModel):
+    name: str | None = None
+    source: str | None = None
+    priority: int | None = None
+    confidence: float | None = None
+    topicality: float | None = None
+    categories: list[str] | None = None
+
+
+class Labels(BaseModel):
+    labels: list[Label]
+
+
+class ApiResponse(BaseModel):
+    id: str
+    result: Caption | Labels
+    model: Model

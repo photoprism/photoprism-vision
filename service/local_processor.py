@@ -1,13 +1,15 @@
 import os
-from typing import Tuple, Union, overload
+from typing import Tuple
 
-from PIL.Image import Image as ImageType
 import torch
+from PIL.Image import Image as ImageType, Image
 from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer, BlipForConditionalGeneration, \
     BlipProcessor, ViTImageProcessor, \
     VisionEncoderDecoderModel
+from typing_extensions import override
 
 from processor import ImageProcessor
+from api import Labels
 
 # Configuration Constants
 MODEL_CONFIG = {
@@ -81,6 +83,7 @@ class LocalImageProcessor(ImageProcessor):
     def can_process(self, model_name: str) -> bool:
         return model_name in MODEL_CONFIG['MODELS']
 
+    @override
     def generate_caption(self, model_name: str, image: ImageType) -> Tuple[str, str]:
         try:
             if model_name == 'kosmos-2':
@@ -92,6 +95,10 @@ class LocalImageProcessor(ImageProcessor):
             raise ValueError(f"Unknown model: {model_name}")
         except Exception as e:
             return 'error', str(e)
+
+    @override
+    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels | str]:
+        pass
 
     def _process_kosmos(self, image: ImageType) -> Tuple[str, str]:
         prompt = "<grounding>An image of"

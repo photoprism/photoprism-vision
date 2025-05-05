@@ -8,12 +8,22 @@ import ollama
 from PIL.Image import Image
 
 from processor import ImageProcessor
-from api import Labels
+from api import Labels, NSFW
 
 logger = logging.getLogger(__name__)
 
 caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Describe this image in detail')
 labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for this image')
+# minicpm-v generates usable output for NSFW detection, but it's not guaranteed to be accurate.
+nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT',
+                             'Analyze this image and return probabilities in the following categories between 0 and 1 '
+                             '(higher value means more likely):\n'
+                             'Neutral: For non-sensitive content (>0.25 means not NSFW)\n'
+                             'Drawing: Likelihood the image is an illustration/drawing\n'
+                             'Hentai: Likelihood the image contains anime/manga adult content\n'
+                             'Porn: Likelihood the image contains explicit adult content\n'
+                             'Sexy: Likelihood the image contains suggestive adult content'
+                             )
 
 
 class OllamaImageProcessor(ImageProcessor):
@@ -35,6 +45,21 @@ class OllamaImageProcessor(ImageProcessor):
             try:
                 labels = Labels.model_validate_json(result)
                 return status, labels
+            except Exception as e:
+                return 'error', f'Failed to parse labels JSON: {str(e)}'
+        return status, result
+
+    @override
+    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
+        """
+        Tries to detect if the image is NSFW. Accurate detection is not guaranteed.
+        """
+        schema = NSFW.model_json_schema()
+        status, result = self._generate_with_prompt(model_name, image, nsfw_prompt, schema=schema)
+        if status == 'ok':
+            try:
+                probabilities = NSFW.model_validate_json(result)
+                return status, probabilities
             except Exception as e:
                 return 'error', f'Failed to parse labels JSON: {str(e)}'
         return status, result

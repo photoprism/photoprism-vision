@@ -6,6 +6,7 @@ requests
 torch
 transformers
 huggingface[hf_xet]
+timm
 ollama
 pydantic
 

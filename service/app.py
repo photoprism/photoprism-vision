@@ -100,5 +100,38 @@ def process_image_labels(model_name: str) -> Tuple[Response, int]:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
+@app.route('/api/v1/vision/nsfw/<model_name>', methods=['POST', 'GET'])
+def detect_nsfw(model_name: str) -> Tuple[Response, int]:
+    try:
+        data = request.get_json() if request.is_json else request.args
+        image = None
+        if data.get('url'):
+            image = load_image(data['url'])
+        elif data.get('images'):
+            image = decode_image(data['images'][0])
+
+        if not image:
+            return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
+
+        for processor in image_processors:
+            if processor.can_process(model_name):
+                status, result = processor.detect_nsfw(model_name, image)
+                if status == 'ok':
+                    response_data = ApiResponse(
+                        id=data.get('id', str(uuid.uuid4())),
+                        result=result,
+                        model=Model(
+                            name=model_name,
+                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                        ),
+                    )
+                    return create_response(response_data, HTTPStatus.OK)
+                return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
+        return create_response({'error': f"There is no image processor that has {model_name} available."},
+                               HTTPStatus.BAD_REQUEST)
+    except Exception as e:
+        return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

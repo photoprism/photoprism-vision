@@ -3,6 +3,8 @@ from typing import Tuple, Union
 
 from PIL.Image import Image
 
+from api import Labels, NSFW
+
 
 class ImageProcessor(ABC):
     @abstractmethod
@@ -18,7 +20,15 @@ class ImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, str]:
+    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels |str]:
+        """
+        :param model_name: name of requested model
+        :param image: Image object
+        """
+        pass
+
+    @abstractmethod
+    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
         """
         :param model_name: name of requested model
         :param image: Image object

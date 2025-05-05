@@ -1,7 +1,8 @@
 import logging
+import os
 import uuid
 from http import HTTPStatus
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 
 from flask import Flask, Response, jsonify, request
 
@@ -9,6 +10,7 @@ from local_processor import MODEL_CONFIG
 from local_processor import LocalImageProcessor
 from ollama_processor import OllamaImageProcessor
 from api import ApiResponse, Caption, Model, Text
+from processor import ImageProcessor
 from utils import decode_image, load_image
 
 logging.basicConfig(
@@ -17,10 +19,10 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-image_processors = [
-    LocalImageProcessor(),
-    OllamaImageProcessor(),
-]
+image_processors: List[ImageProcessor] = [LocalImageProcessor()]
+
+if os.getenv('OLLAMA_ENABLED', 'false').lower() == 'true':
+    image_processors.append(OllamaImageProcessor())
 
 
 def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response | str, int]:

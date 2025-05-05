@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 import torch
 from PIL.Image import Image as ImageType, Image
@@ -40,24 +40,49 @@ MODEL_CONFIG = {
 
 
 class LocalImageProcessor(ImageProcessor):
-    def __init__(self):
-        self.models = {}
-        self.processors = {}
-        self._initialize_models()
+    def __init__(self, download_all_at_startup=True):
+        self.models: Dict[str, Any] = {}
+        self.processors: Dict[str, Any] = {}
+        self._ensure_model_dirs()
 
-    def _initialize_models(self):
+        # Download all models at first start if requested
+        if download_all_at_startup:
+            self._download_all_models()
+
+    def _ensure_model_dirs(self):
+        """Ensure model directories exist without loading the models."""
         os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
-        self._download_and_load_models()
-
-    def _download_and_load_models(self):
+        # Create model directories but don't load the models yet
         for model_name, config in MODEL_CONFIG['MODELS'].items():
-            if not os.path.exists(config['path']):
-                self._download_model(config['source'], config['path'])
-            self._load_model(model_name, config['path'])
+            os.makedirs(config['path'], exist_ok=True)
+
+    def _download_all_models(self):
+        """Download all models at first start."""
+        print("Downloading all models...")
+        for model_name, config in MODEL_CONFIG['MODELS'].items():
+            self._download_model_if_needed(model_name)
+        print("All models downloaded successfully.")
+
+    def _download_model_if_needed(self, model_name: str) -> str:
+        """Download the model if it doesn't exist and return the path."""
+        config = MODEL_CONFIG['MODELS'].get(model_name)
+        if not config:
+            raise ValueError(f"Unknown model: {model_name}")
+
+        path = config['path']
+        source = config['source']
+
+        # Check if model is already downloaded
+        if not os.path.exists(os.path.join(path, "config.json")):
+            print(f"Downloading {source}...")
+            self._download_model(source, path)
+            print(f"Downloaded {source} to {path}")
+
+        return path
 
     @staticmethod
     def _download_model(source: str, path: str):
-        print(f"Downloading {source}...")
+        """Download a model from the source to the specified path."""
         if 'kosmos' in source:
             AutoModelForVision2Seq.from_pretrained(source).save_pretrained(path)
             AutoProcessor.from_pretrained(source).save_pretrained(path)
@@ -73,9 +98,14 @@ class LocalImageProcessor(ImageProcessor):
             AutoProcessor.from_pretrained(source).save_pretrained(path)
         else:
             raise ValueError(f"Unknown model source: {source}")
-        print(f"Downloaded {source} to {path}")
 
-    def _load_model(self, model_name: str, path: str):
+    def _load_model_if_needed(self, model_name: str):
+        """Lazy-load a model only when it's needed."""
+        if model_name in self.models and model_name in self.processors:
+            return
+
+        path = self._download_model_if_needed(model_name)
+
         if model_name == 'kosmos-2':
             self.models[model_name] = AutoModelForVision2Seq.from_pretrained(path)
             self.processors[model_name] = AutoProcessor.from_pretrained(path)
@@ -93,6 +123,10 @@ class LocalImageProcessor(ImageProcessor):
         elif model_name == 'nsfw':
             self.models[model_name] = TimmWrapperForImageClassification.from_pretrained(path)
             self.processors[model_name] = AutoProcessor.from_pretrained(path)
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
+
+        print(f"Loaded model: {model_name}")
 
     def can_process(self, model_name: str) -> bool:
         return model_name in MODEL_CONFIG['MODELS']
@@ -100,6 +134,8 @@ class LocalImageProcessor(ImageProcessor):
     @override
     def generate_caption(self, model_name: str, image: ImageType) -> Tuple[str, str]:
         try:
+            self._load_model_if_needed(model_name)
+
             if model_name == 'kosmos-2':
                 return self._process_kosmos(image)
             elif model_name == 'vit-gpt2':
@@ -118,6 +154,8 @@ class LocalImageProcessor(ImageProcessor):
     @override
     def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
         try:
+            self._load_model_if_needed('nsfw')
+
             model = self.models['nsfw']
             processor = self.processors['nsfw']
 
@@ -165,8 +203,8 @@ class LocalImageProcessor(ImageProcessor):
         num_beams = 4
         gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
 
-        def predict_step(img: ImageType):
-            final_image = img
+        def predict_step():
+            final_image = image
             if image.mode != "RGB":
                 final_image = image.convert(mode="RGB")
 
@@ -182,7 +220,7 @@ class LocalImageProcessor(ImageProcessor):
             preds = [pred.strip() for pred in preds]
             return preds
 
-        processed_text = predict_step(image)
+        processed_text = predict_step()
 
         return "ok", processed_text[0]
 

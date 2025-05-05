@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Tuple, Dict, Any
 
@@ -38,6 +39,7 @@ MODEL_CONFIG = {
     }
 }
 
+logger = logging.getLogger(__name__)
 
 class LocalImageProcessor(ImageProcessor):
     def __init__(self, download_all_at_startup=True):
@@ -49,7 +51,8 @@ class LocalImageProcessor(ImageProcessor):
         if download_all_at_startup:
             self._download_all_models()
 
-    def _ensure_model_dirs(self):
+    @staticmethod
+    def _ensure_model_dirs():
         """Ensure model directories exist without loading the models."""
         os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
         # Create model directories but don't load the models yet
@@ -57,11 +60,11 @@ class LocalImageProcessor(ImageProcessor):
             os.makedirs(config['path'], exist_ok=True)
 
     def _download_all_models(self):
-        """Download all models at first start."""
-        print("Downloading all models...")
+        """Download all models at the first start."""
+        logger.info("Downloading all models...")
         for model_name, config in MODEL_CONFIG['MODELS'].items():
             self._download_model_if_needed(model_name)
-        print("All models downloaded successfully.")
+        logger.info("All models downloaded successfully.")
 
     def _download_model_if_needed(self, model_name: str) -> str:
         """Download the model if it doesn't exist and return the path."""
@@ -74,9 +77,9 @@ class LocalImageProcessor(ImageProcessor):
 
         # Check if model is already downloaded
         if not os.path.exists(os.path.join(path, "config.json")):
-            print(f"Downloading {source}...")
+            logger.info(f"Downloading {source}...")
             self._download_model(source, path)
-            print(f"Downloaded {source} to {path}")
+            logger.info(f"Downloaded {source} to {path}")
 
         return path
 
@@ -100,7 +103,7 @@ class LocalImageProcessor(ImageProcessor):
             raise ValueError(f"Unknown model source: {source}")
 
     def _load_model_if_needed(self, model_name: str):
-        """Lazy-load a model only when it's needed."""
+        """Lazy-load a model only when it's necessary."""
         if model_name in self.models and model_name in self.processors:
             return
 
@@ -126,7 +129,7 @@ class LocalImageProcessor(ImageProcessor):
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
-        print(f"Loaded model: {model_name}")
+        logger.info(f"Loaded model: {model_name}")
 
     def can_process(self, model_name: str) -> bool:
         return model_name in MODEL_CONFIG['MODELS']

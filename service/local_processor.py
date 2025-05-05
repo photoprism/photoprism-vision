@@ -31,7 +31,7 @@ MODEL_CONFIG = {
             'source': 'Salesforce/blip-image-captioning-large',
             'version': 'latest',
         },
-        'nsfw': {
+        'nsfw_image_detector': {
             'path': 'models/nsfw_image_detector',
             'source': 'Freepik/nsfw_image_detector',
             'version': 'latest',
@@ -96,7 +96,7 @@ class LocalImageProcessor(ImageProcessor):
         elif 'blip' in source:
             BlipForConditionalGeneration.from_pretrained(source).save_pretrained(path)
             BlipProcessor.from_pretrained(source).save_pretrained(path)
-        elif 'nsfw' in source:
+        elif 'nsfw_image_detector' in source:
             TimmWrapperForImageClassification.from_pretrained(source).save_pretrained(path)
             AutoProcessor.from_pretrained(source).save_pretrained(path)
         else:
@@ -123,7 +123,7 @@ class LocalImageProcessor(ImageProcessor):
         elif model_name == 'blip':
             self.models[model_name] = BlipForConditionalGeneration.from_pretrained(path)
             self.processors[model_name] = BlipProcessor.from_pretrained(path)
-        elif model_name == 'nsfw':
+        elif model_name == 'nsfw_image_detector':
             self.models[model_name] = TimmWrapperForImageClassification.from_pretrained(path)
             self.processors[model_name] = AutoProcessor.from_pretrained(path)
         else:

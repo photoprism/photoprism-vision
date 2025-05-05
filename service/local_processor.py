@@ -1,16 +1,24 @@
 import logging
 import os
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict
+from abc import ABC, abstractmethod
 
 import torch
-from PIL.Image import Image as ImageType, Image
-from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer, BlipForConditionalGeneration, \
-    BlipProcessor, TimmWrapperForImageClassification, ViTImageProcessor, \
+from PIL.Image import Image
+from transformers import (
+    AutoModelForVision2Seq,
+    AutoProcessor,
+    AutoTokenizer,
+    BlipForConditionalGeneration,
+    BlipProcessor,
+    TimmWrapperForImageClassification,
+    ViTImageProcessor,
     VisionEncoderDecoderModel
+)
 from typing_extensions import override
 
-from processor import ImageProcessor
 from api import Labels, NSFW, NSFWProbabilities
+from processor import ImageProcessor
 
 # Configuration Constants
 MODEL_CONFIG = {
@@ -41,138 +49,272 @@ MODEL_CONFIG = {
 
 logger = logging.getLogger(__name__)
 
-class LocalImageProcessor(ImageProcessor):
-    def __init__(self, download_all_at_startup=True):
-        self.models: Dict[str, Any] = {}
-        self.processors: Dict[str, Any] = {}
-        self._ensure_model_dirs()
 
-        # Download all models at first start if requested
-        if download_all_at_startup:
-            self._download_all_models()
+class TorchImageProcessor(ABC):
+    def __init__(self):
+        self.model = None
+        self.processor = None
+        self._ensure_model_dir()
 
-    @staticmethod
-    def _ensure_model_dirs():
-        """Ensure model directories exist without loading the models."""
+    def _ensure_model_dir(self):
+        """Ensure model directory exists."""
+        config = self._get_model_config()
         os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
-        # Create model directories but don't load the models yet
-        for model_name, config in MODEL_CONFIG['MODELS'].items():
-            os.makedirs(config['path'], exist_ok=True)
+        os.makedirs(config['path'], exist_ok=True)
 
-    def _download_all_models(self):
-        """Download all models at the first start."""
-        logger.info("Downloading all models...")
-        for model_name, config in MODEL_CONFIG['MODELS'].items():
-            self._download_model_if_needed(model_name)
-        logger.info("All models downloaded successfully.")
-
-    def _download_model_if_needed(self, model_name: str) -> str:
+    def download_model_if_needed(self):
         """Download the model if it doesn't exist and return the path."""
-        config = MODEL_CONFIG['MODELS'].get(model_name)
-        if not config:
-            raise ValueError(f"Unknown model: {model_name}")
-
+        config = self._get_model_config()
         path = config['path']
         source = config['source']
 
-        # Check if model is already downloaded
+        # Check if the model is already downloaded
         if not os.path.exists(os.path.join(path, "config.json")):
             logger.info(f"Downloading {source}...")
             self._download_model(source, path)
             logger.info(f"Downloaded {source} to {path}")
 
-        return path
+    @abstractmethod
+    def _get_model_config(self) -> Dict[str, str]:
+        """Return the model configuration."""
+        pass
 
-    @staticmethod
-    def _download_model(source: str, path: str):
+    @abstractmethod
+    def _load_model(self):
+        """Load the model and processor."""
+        pass
+
+    @abstractmethod
+    def _download_model(self, source: str, path: str):
         """Download a model from the source to the specified path."""
-        if 'kosmos' in source:
-            AutoModelForVision2Seq.from_pretrained(source).save_pretrained(path)
-            AutoProcessor.from_pretrained(source).save_pretrained(path)
-        elif 'vit-gpt2' in source:
-            VisionEncoderDecoderModel.from_pretrained(source).save_pretrained(path)
-            ViTImageProcessor.from_pretrained(source).save_pretrained(path)
-            AutoTokenizer.from_pretrained(source).save_pretrained(path)
-        elif 'blip' in source:
-            BlipForConditionalGeneration.from_pretrained(source).save_pretrained(path)
-            BlipProcessor.from_pretrained(source).save_pretrained(path)
-        elif 'nsfw_image_detector' in source:
-            TimmWrapperForImageClassification.from_pretrained(source).save_pretrained(path)
-            AutoProcessor.from_pretrained(source).save_pretrained(path)
-        else:
-            raise ValueError(f"Unknown model source: {source}")
+        pass
 
-    def _load_model_if_needed(self, model_name: str):
-        """Lazy-load a model only when it's necessary."""
-        if model_name in self.models and model_name in self.processors:
-            return
+    def load_if_needed(self):
+        """Lazy-load the model only when it's necessary."""
+        if self.model is None or self.processor is None:
+            self.download_model_if_needed()
+            self._load_model()
+            logger.info(f"Loaded model: {self._get_model_name()}")
 
-        path = self._download_model_if_needed(model_name)
+    @abstractmethod
+    def _get_model_name(self) -> str:
+        """Return the model name."""
+        pass
 
-        if model_name == 'kosmos-2':
-            self.models[model_name] = AutoModelForVision2Seq.from_pretrained(path)
-            self.processors[model_name] = AutoProcessor.from_pretrained(path)
-        elif model_name == 'vit-gpt2':
-            self.models[model_name] = VisionEncoderDecoderModel.from_pretrained(path)
-            self.processors[model_name] = {
-                'feature_extractor': ViTImageProcessor.from_pretrained(path),
-                'tokenizer': AutoTokenizer.from_pretrained(path),
-                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            }
-            self.models[model_name].to(self.processors[model_name]['device'])
-        elif model_name == 'blip':
-            self.models[model_name] = BlipForConditionalGeneration.from_pretrained(path)
-            self.processors[model_name] = BlipProcessor.from_pretrained(path)
-        elif model_name == 'nsfw_image_detector':
-            self.models[model_name] = TimmWrapperForImageClassification.from_pretrained(path)
-            self.processors[model_name] = AutoProcessor.from_pretrained(path)
-        else:
-            raise ValueError(f"Unknown model: {model_name}")
+    @abstractmethod
+    def generate_caption(self, image: Image) -> Tuple[str, str]:
+        pass
 
-        logger.info(f"Loaded model: {model_name}")
+    @abstractmethod
+    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
+        pass
 
-    def can_process(self, model_name: str) -> bool:
-        return model_name in MODEL_CONFIG['MODELS']
+
+class Kosmos2Processor(TorchImageProcessor):
+    """Processor for the Kosmos-2 model."""
 
     @override
-    def generate_caption(self, model_name: str, image: ImageType) -> Tuple[str, str]:
-        try:
-            self._load_model_if_needed(model_name)
+    def _get_model_config(self) -> Dict[str, str]:
+        return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
-            if model_name == 'kosmos-2':
-                return self._process_kosmos(image)
-            elif model_name == 'vit-gpt2':
-                return self._process_vit(image)
-            elif model_name == 'blip':
-                return self._process_blip(image)
-            raise ValueError(f"Unknown model: {model_name}")
+    @override
+    def _get_model_name(self) -> str:
+        return 'kosmos-2'
+
+    @override
+    def _download_model(self, source: str, path: str):
+        AutoModelForVision2Seq.from_pretrained(source).save_pretrained(path)
+        AutoProcessor.from_pretrained(source).save_pretrained(path)
+
+    @override
+    def _load_model(self):
+        path = self._get_model_config()['path']
+        self.model = AutoModelForVision2Seq.from_pretrained(path)
+        self.processor = AutoProcessor.from_pretrained(path)
+
+    @override
+    def generate_caption(self, image: Image) -> Tuple[str, str]:
+        try:
+            self.load_if_needed()
+
+            prompt = "<grounding>An image of"
+            inputs = self.processor(text=prompt, images=image, return_tensors="pt")
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.to(device)
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            generated_ids = self.model.generate(
+                pixel_values=inputs["pixel_values"],
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                image_embeds_position_mask=inputs["image_embeds_position_mask"],
+                max_new_tokens=128,
+            )
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+            processed_text, _ = self.processor.post_process_generation(generated_text)
+            return 'ok', processed_text
         except Exception as e:
             return 'error', str(e)
 
     @override
-    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels | str]:
-        # TODO: Implement labels generation
-        pass
+    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
+        return 'error', f"{self._get_model_name()} does not support label generation"
+
+
+class VitGpt2Processor(TorchImageProcessor):
+    """Processor for the ViT-GPT2 model."""
 
     @override
-    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
-        try:
-            self._load_model_if_needed('nsfw')
+    def _get_model_config(self) -> Dict[str, str]:
+        return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
-            model = self.models['nsfw']
-            processor = self.processors['nsfw']
+    @override
+    def _get_model_name(self) -> str:
+        return 'vit-gpt2'
+
+    @override
+    def _download_model(self, source: str, path: str):
+        VisionEncoderDecoderModel.from_pretrained(source).save_pretrained(path)
+        ViTImageProcessor.from_pretrained(source).save_pretrained(path)
+        AutoTokenizer.from_pretrained(source).save_pretrained(path)
+
+    @override
+    def _load_model(self):
+        path = self._get_model_config()['path']
+        self.model = VisionEncoderDecoderModel.from_pretrained(path)
+        self.processor = {
+            'feature_extractor': ViTImageProcessor.from_pretrained(path),
+            'tokenizer': AutoTokenizer.from_pretrained(path),
+            'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        }
+        self.model.to(self.processor['device'])
+
+    @override
+    def generate_caption(self, image: Image) -> Tuple[str, str]:
+        try:
+            self.load_if_needed()
+
+            max_length = 16
+            num_beams = 4
+            gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
+
+            final_image = image
+            if image.mode != "RGB":
+                final_image = image.convert(mode="RGB")
+
+            pixel_values = self.processor["feature_extractor"](
+                images=[final_image],
+                return_tensors="pt"
+            ).pixel_values
+
+            device = self.processor["device"]
+            pixel_values = pixel_values.to(device)
+
+            output_ids = self.model.generate(pixel_values, **gen_kwargs)
+
+            preds = self.processor["tokenizer"].batch_decode(output_ids, skip_special_tokens=True)
+            preds = [pred.strip() for pred in preds]
+
+            return "ok", preds[0]
+        except Exception as e:
+            return 'error', str(e)
+
+    @override
+    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
+        return 'error', f"{self._get_model_name()} does not support label generation"
+
+
+class BlipImageProcessor(TorchImageProcessor):
+    """Processor for the BLIP model."""
+
+    @override
+    def _get_model_config(self) -> Dict[str, str]:
+        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+
+    @override
+    def _get_model_name(self) -> str:
+        return 'blip'
+
+    @override
+    def _download_model(self, source: str, path: str):
+        BlipForConditionalGeneration.from_pretrained(source).save_pretrained(path)
+        BlipProcessor.from_pretrained(source).save_pretrained(path)
+
+    @override
+    def _load_model(self):
+        path = self._get_model_config()['path']
+        self.model = BlipForConditionalGeneration.from_pretrained(path)
+        self.processor = BlipProcessor.from_pretrained(path)
+
+    @override
+    def generate_caption(self, image: Image) -> Tuple[str, str]:
+        try:
+            self.load_if_needed()
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.to(device)
+
+            inputs = self.processor(images=image, return_tensors="pt")
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            out = self.model.generate(**inputs)
+            processed_text = self.processor.decode(out[0], skip_special_tokens=True)
+
+            return 'ok', processed_text
+        except Exception as e:
+            return 'error', str(e)
+
+    @override
+    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
+        return 'error', f"{self._get_model_name()} does not support label generation"
+
+
+class NSFWImageProcessor(TorchImageProcessor):
+    """Processor for NSFW image detection."""
+
+    @override
+    def _get_model_config(self) -> Dict[str, str]:
+        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+
+    @override
+    def _get_model_name(self) -> str:
+        return 'nsfw_image_detector'
+
+    @override
+    def _download_model(self, source: str, path: str):
+        TimmWrapperForImageClassification.from_pretrained(source).save_pretrained(path)
+        AutoProcessor.from_pretrained(source).save_pretrained(path)
+
+    @override
+    def _load_model(self):
+        path = self._get_model_config()['path']
+        self.model = TimmWrapperForImageClassification.from_pretrained(path)
+        self.processor = AutoProcessor.from_pretrained(path)
+
+    @override
+    def generate_caption(self, image: Image) -> Tuple[str, str]:
+        return 'error', "This model does not support caption generation"
+
+    @override
+    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
+        return 'error', f"{self._get_model_name()} does not support label generation"
+
+    def detect_nsfw(self, image: Image) -> Tuple[str, NSFW | str]:
+        try:
+            self.load_if_needed()
 
             # Process the image
-            inputs = processor(images=image, return_tensors="pt")
+            inputs = self.processor(images=image, return_tensors="pt")
 
             # Use GPU if available
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            model.to(device)
+            self.model.to(device)
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             # Get predictions
             with torch.no_grad():
-                outputs = model(**inputs)
+                outputs = self.model(**inputs)
                 neutral, low, medium, high = torch.softmax(outputs.logits, dim=1).squeeze().cpu().numpy()
 
             nsfw_probs = NSFWProbabilities(
@@ -187,48 +329,77 @@ class LocalImageProcessor(ImageProcessor):
         except Exception as e:
             return 'error', str(e)
 
-    def _process_kosmos(self, image: ImageType) -> Tuple[str, str]:
-        prompt = "<grounding>An image of"
-        inputs = self.processors['kosmos-2'](text=prompt, images=image, return_tensors="pt")
-        generated_ids = self.models['kosmos-2'].generate(
-            pixel_values=inputs["pixel_values"],
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            image_embeds_position_mask=inputs["image_embeds_position_mask"],
-            max_new_tokens=128,
-        )
-        generated_text = self.processors['kosmos-2'].batch_decode(generated_ids, skip_special_tokens=True)[0]
-        processed_text, _ = self.processors['kosmos-2'].post_process_generation(generated_text)
-        return 'ok', processed_text
 
-    def _process_vit(self, image: ImageType) -> Tuple[str, str]:
-        max_length = 16
-        num_beams = 4
-        gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
+class ProcessorFactory:
+    """Factory for creating processor instances."""
 
-        def predict_step():
-            final_image = image
-            if image.mode != "RGB":
-                final_image = image.convert(mode="RGB")
+    @staticmethod
+    def create_processor(model_name: str) -> TorchImageProcessor:
+        if model_name == 'kosmos-2':
+            return Kosmos2Processor()
+        elif model_name == 'vit-gpt2':
+            return VitGpt2Processor()
+        elif model_name == 'blip':
+            return BlipImageProcessor()
+        elif model_name == 'nsfw_image_detector':
+            return NSFWImageProcessor()
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
 
-            processor = self.processors["vit-gpt2"]
-            pixel_values = processor["feature_extractor"](images=[final_image],
-                                                          return_tensors="pt").pixel_values
-            device = processor["device"]
-            pixel_values = pixel_values.to(device)
 
-            output_ids = self.models["vit-gpt2"].generate(pixel_values, **gen_kwargs)
+class LocalImageProcessor(ImageProcessor):
+    """Manager class that coordinates local image processors."""
 
-            preds = processor["tokenizer"].batch_decode(output_ids, skip_special_tokens=True)
-            preds = [pred.strip() for pred in preds]
-            return preds
+    def __init__(self, download_all_at_startup=True):
+        self.processors = {}
+        self._ensure_model_dirs()
 
-        processed_text = predict_step()
+        # Download all models at first start if requested
+        if download_all_at_startup:
+            self._download_all_models()
 
-        return "ok", processed_text[0]
+    @staticmethod
+    def _ensure_model_dirs():
+        """Ensure model directories exist without loading the models."""
+        os.makedirs(MODEL_CONFIG['BASE_DIR'], exist_ok=True)
+        # Create model directories but don't load the models yet
+        for model_name, config in MODEL_CONFIG['MODELS'].items():
+            os.makedirs(config['path'], exist_ok=True)
 
-    def _process_blip(self, image: ImageType) -> Tuple[str, str]:
-        inputs = self.processors['blip'](images=image, return_tensors="pt")
-        out = self.models['blip'].generate(**inputs)
-        processed_text = self.processors['blip'].decode(out[0], skip_special_tokens=True)
-        return 'ok', processed_text
+    @staticmethod
+    def _download_all_models():
+        """Download all models at the first start."""
+        logger.info("Downloading all models...")
+        for model_name in MODEL_CONFIG['MODELS']:
+            processor = ProcessorFactory.create_processor(model_name)
+            processor.download_model_if_needed()
+        logger.info("All models downloaded successfully.")
+
+    def get_processor(self, model_name: str) -> TorchImageProcessor:
+        """Get or create a processor for the specified model."""
+        if model_name not in self.processors:
+            self.processors[model_name] = ProcessorFactory.create_processor(model_name)
+        return self.processors[model_name]
+
+    @override
+    def can_process(self, model_name: str) -> bool:
+        """Check if the specified model is supported."""
+        return model_name in MODEL_CONFIG['MODELS']
+
+    @override
+    def generate_caption(self, model_name: str, image: Image) -> Tuple[str, str]:
+        processor = self.get_processor(model_name)
+        return processor.generate_caption(image)
+
+    @override
+    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels | str]:
+        processor = self.get_processor(model_name)
+        return processor.generate_labels(image)
+
+    @override
+    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
+        """Detect NSFW content in the image using the specified model."""
+        processor = self.get_processor(model_name)
+        if isinstance(processor, NSFWImageProcessor):
+            return processor.detect_nsfw(image)
+        raise ValueError(f"Model {model_name} does not support NSFW detection")

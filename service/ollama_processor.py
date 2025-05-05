@@ -13,7 +13,7 @@ from api import Labels, NSFW
 logger = logging.getLogger(__name__)
 
 caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Describe this image in detail')
-labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for this image')
+labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for given images')
 # minicpm-v generates usable output for NSFW detection, but it's not guaranteed to be accurate.
 nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT',
                              'Analyze this image and return probabilities in the following categories between 0 and 1 '
@@ -35,12 +35,12 @@ class OllamaImageProcessor(ImageProcessor):
 
     @override
     def generate_caption(self, model_name: str, image: Image) -> Tuple[str, str]:
-        return self._generate_with_prompt(model_name, image, caption_prompt)
+        return self._generate_with_prompt(model_name, [image], caption_prompt)
 
     @override
-    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, images: list[Image]) -> Tuple[str, Labels | str]:
         schema = Labels.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, image, labels_prompt, schema=schema)
+        status, result = self._generate_with_prompt(model_name, images, labels_prompt, schema=schema)
         if status == 'ok':
             try:
                 labels = Labels.model_validate_json(result)
@@ -50,12 +50,12 @@ class OllamaImageProcessor(ImageProcessor):
         return status, result
 
     @override
-    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, images: Image) -> Tuple[str, NSFW | str]:
         """
         Tries to detect if the image is NSFW. Accurate detection is not guaranteed.
         """
         schema = NSFW.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, image, nsfw_prompt, schema=schema)
+        status, result = self._generate_with_prompt(model_name, [images], nsfw_prompt, schema=schema)
         if status == 'ok':
             try:
                 probabilities = NSFW.model_validate_json(result)
@@ -64,13 +64,13 @@ class OllamaImageProcessor(ImageProcessor):
                 return 'error', f'Failed to parse labels JSON: {str(e)}'
         return status, result
 
-    def _generate_with_prompt(self, model_name: str, image: Image, prompt: str, schema=None) -> Tuple[str, Any]:
+    def _generate_with_prompt(self, model_name: str, images: list[Image], prompt: str, schema=None) -> Tuple[str, Any]:
         try:
-            base64_image = self._convert_image_to_base64(image)
+            base64_images = [self._convert_image_to_base64(image) for image in images]
             response = ollama.generate(
                 model=model_name,
                 prompt=prompt,
-                images=[base64_image],
+                images=base64_images,
                 format=schema
             )
             return self._process_ollama_response(response)

@@ -31,6 +31,16 @@ def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Respon
     return jsonify(data), status_code
 
 
+def parse_image_from_request():
+    data = request.get_json() if request.is_json else request.args
+    image = None
+    if data.get('url'):
+        image = load_image(data['url'])
+    elif data.get('images'):
+        image = decode_image(data['images'][0])
+    return data, image
+
+
 @app.route('/api/v1/vision/caption', methods=['POST', 'GET'])
 def default_process_image_caption() -> Tuple[Response, int]:
     return process_image_caption("kosmos-2")
@@ -39,13 +49,7 @@ def default_process_image_caption() -> Tuple[Response, int]:
 @app.route('/api/v1/vision/caption/<model_name>', methods=['POST', 'GET'])
 def process_image_caption(model_name: str) -> Tuple[Response, int]:
     try:
-        data = request.get_json() if request.is_json else request.args
-        image = None
-        if data.get('url'):
-            image = load_image(data['url'])
-        elif data.get('images'):
-            image = decode_image(data['images'][0])
-
+        data, image = parse_image_from_request()
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 
@@ -73,18 +77,18 @@ def process_image_caption(model_name: str) -> Tuple[Response, int]:
 def process_image_labels(model_name: str) -> Tuple[Response, int]:
     try:
         data = request.get_json() if request.is_json else request.args
-        image = None
+        images = []
         if data.get('url'):
-            image = load_image(data['url'])
+            images = [load_image(data['url'])]
         elif data.get('images'):
-            image = decode_image(data['images'][0])
+            images = decode_image(data['images'])
 
-        if not image:
-            return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
+        if not images:
+            return create_response({'error': "images or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
             if processor.can_process(model_name):
-                status, result = processor.generate_labels(model_name, image)
+                status, result = processor.generate_labels(model_name, images)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
@@ -96,7 +100,7 @@ def process_image_labels(model_name: str) -> Tuple[Response, int]:
                     )
                     return create_response(response_data, HTTPStatus.OK)
                 return create_response({'error': result}, HTTPStatus.INTERNAL_SERVER_ERROR)
-        return create_response({'error': f"There is no image processor that has {model_name} available."},
+        return create_response({'error': f"There is no images processor that has {model_name} available."},
                                HTTPStatus.BAD_REQUEST)
     except Exception as e:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -105,13 +109,7 @@ def process_image_labels(model_name: str) -> Tuple[Response, int]:
 @app.route('/api/v1/vision/nsfw/<model_name>', methods=['POST', 'GET'])
 def detect_nsfw(model_name: str) -> Tuple[Response, int]:
     try:
-        data = request.get_json() if request.is_json else request.args
-        image = None
-        if data.get('url'):
-            image = load_image(data['url'])
-        elif data.get('images'):
-            image = decode_image(data['images'][0])
-
+        data, image = parse_image_from_request()
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 

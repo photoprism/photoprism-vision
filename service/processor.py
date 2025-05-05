@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 from PIL.Image import Image
 
@@ -20,10 +20,10 @@ class ImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels |str]:
+    def generate_labels(self, model_name: str, images: list[Image]) -> Tuple[str, Labels |str]:
         """
         :param model_name: name of requested model
-        :param image: Image object
+        :param images: Image objects
         """
         pass
 

@@ -105,10 +105,6 @@ class TorchImageProcessor(ABC):
     def generate_caption(self, image: Image) -> Tuple[str, str]:
         pass
 
-    @abstractmethod
-    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
-        pass
-
 
 class Kosmos2Processor(TorchImageProcessor):
     """Processor for the Kosmos-2 model."""
@@ -156,10 +152,6 @@ class Kosmos2Processor(TorchImageProcessor):
             return 'ok', processed_text
         except Exception as e:
             return 'error', str(e)
-
-    @override
-    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
-        return 'error', f"{self._get_model_name()} does not support label generation"
 
 
 class VitGpt2Processor(TorchImageProcessor):
@@ -220,10 +212,6 @@ class VitGpt2Processor(TorchImageProcessor):
         except Exception as e:
             return 'error', str(e)
 
-    @override
-    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
-        return 'error', f"{self._get_model_name()} does not support label generation"
-
 
 class BlipImageProcessor(TorchImageProcessor):
     """Processor for the BLIP model."""
@@ -265,10 +253,6 @@ class BlipImageProcessor(TorchImageProcessor):
         except Exception as e:
             return 'error', str(e)
 
-    @override
-    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
-        return 'error', f"{self._get_model_name()} does not support label generation"
-
 
 class NSFWImageProcessor(TorchImageProcessor):
     """Processor for NSFW image detection."""
@@ -295,10 +279,6 @@ class NSFWImageProcessor(TorchImageProcessor):
     @override
     def generate_caption(self, image: Image) -> Tuple[str, str]:
         return 'error', "This model does not support caption generation"
-
-    @override
-    def generate_labels(self, image: Image) -> Tuple[str, Labels | str]:
-        return 'error', f"{self._get_model_name()} does not support label generation"
 
     def detect_nsfw(self, image: Image) -> Tuple[str, NSFW | str]:
         try:
@@ -392,9 +372,9 @@ class LocalImageProcessor(ImageProcessor):
         return processor.generate_caption(image)
 
     @override
-    def generate_labels(self, model_name: str, image: Image) -> Tuple[str, Labels | str]:
-        processor = self.get_processor(model_name)
-        return processor.generate_labels(image)
+    def generate_labels(self, model_name: str, images: list[Image]) -> Tuple[str, Labels | str]:
+        # TODO: Implement label generation for local models
+        return 'error', 'Local model does not support label generation yet. Use the Ollama API instead.'
 
     @override
     def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:

@@ -5,7 +5,7 @@ pillow
 requests
 torch
 transformers
-huggingface[hf_xet]
+huggingface_hub[hf_xet]
 timm
 ollama
 pydantic

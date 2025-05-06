@@ -41,6 +41,10 @@ services:
             - driver: "nvidia"
               capabilities: [ gpu ]
               count: "all"
+    volumes:
+      - models:/app/models
+      - venv:/app/venv
+
 
   ## Ollama Large Language Models
   ## https://github.com/ollama/ollama
@@ -65,7 +69,10 @@ services:
               capabilities: [ gpu ]
               count: "all"
 
+
 ## Create named volume for ollama models
 volumes:
+  models:
+  venv:
   ollama:
     driver: local

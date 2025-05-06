@@ -9,6 +9,7 @@ huggingface[hf_xet]
 timm
 ollama
 pydantic
+gunicorn
 
 ### Intel-specific libraries not available for ARM64-based devices.
 ### see https://pip.pypa.io/en/stable/reference/requirement-specifiers/

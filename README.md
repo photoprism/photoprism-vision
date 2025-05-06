@@ -11,17 +11,47 @@ PhotoPrism® Computer Vision API
 This repository [provides web services](#usage) with advanced [computer vision models](#models) that can be used with [PhotoPrism](https://github.com/photoprism/photoprism) and other applications.
 
 ## Table of Contents
+<!-- TOC -->
+* [PhotoPrism® Computer Vision API](#photoprism-computer-vision-api)
+  * [Table of Contents](#table-of-contents)
+  * [Local Models](#local-models)
+    * [Kosmos-2](#kosmos-2)
+    * [VIT-GPT2](#vit-gpt2)
+    * [BLIP](#blip)
+  * [Remote integrations](#remote-integrations)
+    * [OLLAMA](#ollama)
+      * [Configuration](#configuration)
+    * [Models](#models)
+  * [Dependencies](#dependencies)
+    * [Flask](#flask)
+    * [PyTorch](#pytorch)
+    * [Transformers](#transformers)
+    * [Pillow](#pillow)
+    * [pydantic](#pydantic)
+    * [ollama](#ollama-1)
+    * [timm](#timm)
+    * [huggingface_hub[hf_xet]](#huggingface_hubhf_xet)
+  * [Build Setup](#build-setup)
+  * [Usage](#usage)
+    * [API Endpoints](#api-endpoints)
+      * [`/api/v1/vision/caption`](#apiv1visioncaption)
+      * [`/api/v1/vision/caption/<model_name>`](#apiv1visioncaptionmodel_name)
+      * [`/api/v1/vision/labels/<model_name>`](#apiv1visionlabelsmodel_name)
+      * [`/api/v1/vision/nsfw/<model_name>`](#apiv1visionnsfwmodel_name)
+    * [Example Request](#example-request)
+    * [Example Response](#example-response)
+  * [Code Structure](#code-structure)
+    * [Internal API](#internal-api)
+    * [Model Loading and Initialization](#model-loading-and-initialization)
+  * [Request Handlers](#request-handlers)
+    * [Default Endpoint](#default-endpoint)
+    * [Specific Endpoints](#specific-endpoints)
+  * [Contributors](#contributors)
+  * [Submitting Pull Requests](#submitting-pull-requests)
+  * [License and Disclaimer](#license-and-disclaimer)
+<!-- TOC -->
 
-1. [Models](#models)
-2. [Dependencies](#dependencies)
-3. [Build Setup](#build-setup)
-4. [Usage](#usage)
-5. [API Endpoints](#api-endpoints)
-6. [Code Structure](#code-structure)
-7. [Contributing](#contributors)
-8. [Licensing](#license-and-disclaimer)
-
-## Models
+## Local Models
 
 The currently integrated models, each with [its own endpoint](#api-endpoints), are [kosmos-2](#kosmos-2), [vit-gpt2-image-captioning](#vit-gpt2), and [blip-image-captioning large](#blip):
 
@@ -36,6 +66,51 @@ This model was released by [nlpconnect](https://huggingface.co/nlpconnect/vit-gp
 ### BLIP
 
 This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-image-captioning-large) in 2022. The primary purpose for this model was to increase both image understanding and text generation using novel techniques. It has achieved a +2.8% CIDEr result, and I've found this model to be more performant than VIT-GPT2, but Kosmos-2 to be slightly better (a .4 increase in CLIP score).
+
+### nsfw_image_detector
+
+This model was released by [Freepik](https://huggingface.co/Freepik/nsfw_image_detector). This model can only calculate NSFW weights within four categories: neutral, low, medium, high.
+
+Mapping is done with the best effort to the current API structure.
+
+## Remote integrations
+
+### OLLAMA
+
+Currently, there is implemented ollama integration.
+
+#### Configuration
+
+Ollama usage can be configured through environment variables.
+
+| ENV                   | Default value          | Meaning                             |
+|-----------------------|------------------------|-------------------------------------|
+| OLLAMA_ENABLED        | false                  | true enables loading of integration |
+| OLLAMA_HOST           | http://localhost:11434 | Url to OLLAMA instance              |
+| OLLAMA_NSFW_PROMPT    | see code               | Prompt used for NSFW detection      |
+| OLLAMA_LABELS_PROMPT  | see code               | Prompt used for label extraction    |
+| OLLAMA_CAPTION_PROMPT | see code               | Prompt used for caption extraction  |
+
+### Models
+
+For usage of models in ollama see a [model library](https://ollama.com/library) and official [documentation](https://github.com/ollama/ollama)
+
+Usually you pull model in advance to be available for inference. You can list them with command ollama list. Name of model is in first column including tag.
+
+```aiignore
+llava-phi3:latest                             c7edd7b87593    2.9 GB    45 hours ago    
+gemma3:4b-it-qat                              d01ad0579247    4.0 GB    45 hours ago    
+gemma3:12b-it-qat                             5d4fa005e7bb    8.9 GB    2 days ago      
+gemma3:27b-it-qat                             29eb0b9aeda3    18 GB     2 days ago      
+gemma3:latest                                 c0494fe00251    3.3 GB    6 weeks ago     
+phi4:latest                                   ac896e5b8b34    9.1 GB    2 months ago    
+qwen2.5:latest                                845dbda0ea48    4.7 GB    2 months ago 
+```
+
+Requirements for running LLM may be roughly estimated from its size. If model has 4 GiB, Then it will probably fit into any GPU with 8 GiB VRAM.
+If the model doesn't fit into VRAM, it will run on CPU and it will be much slower (but may be still usable).
+
+Real requirements depend on context length and many other parameters, so you should test manually what model fits your requirements based on the quality of inference and speed of inference on your HW.
 
 ## Dependencies
 
@@ -55,9 +130,21 @@ This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-i
 
 [Pillow](https://pypi.org/project/pillow/) is used to take the supplied URL and convert it into the format needed to input into the models.
 
-### Hardware Acceleration Libraries
+### pydantic
 
-[Numpy](https://numpy.org/) could be used for further hardware acceleration. It isn't included in the application by default to save space and keep from installing unnecessary dependencies. Numpy can be configured to use the GPU for computations. PyTorch already enables GPU processing, so numpy may not make a signficant difference.
+[pydantic](https://github.com/pydantic/pydantic) is used for JSON schemas, serialization and deserialization of requests and responses.
+
+### ollama
+
+[ollama](https://github.com/ollama/ollama) is used as integration library that connects to any given ollama instance.
+
+### timm
+
+[timm](https://huggingface.co/timm) is a tensorflow extension for timm models. Currently used for NSFW detection.
+
+### huggingface_hub[hf_xet]
+
+[xet](https://huggingface.co/blog/xet-on-the-hub) Extension used for faster downloading of huggingface models.
 
 ## Build Setup
 
@@ -113,19 +200,19 @@ Alternatively, you can perform `GET` requests with URL-encoded query parameters,
 
 #### `/api/v1/vision/caption`
 
-This is the default endpoint of the API. An image url should be passed in with the key "url", and optionally a "model" and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to using the kosmos-2 model.
+This is the default endpoint of the API. An image url should be passed in with the key "url" or "images" that contains array of base64 encoded images, and optionally a "model" and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to using the kosmos-2 model.
 
-#### `/api/v1/vision/caption/kosmos-2/patch14-224`
+#### `/api/v1/vision/caption/<model_name>`
 
-This is the endpoint for the Kosmos-2 model. An image url should be passed in with the key "url", and optionally a "model" and/or "id" value can be passed in.
+This is the endpoint for a generation of captions. For detailed output see `ApiResponse` and `Caption` classes in api.py
 
-#### `/api/v1/vision/caption/vit-gpt2-image-captioning`
+#### `/api/v1/vision/labels/<model_name>`
 
-This is the endpoint for the VIT GPT-2 model. An image url should be passed in with the key "url", and optionally an "id" value can be passed in.
+This is the endpoint for a generation of labels. For detailed output see `ApiResponse` and `Labels` classes in api.py
 
-#### `/api/v1/vision/caption/blip-image-captioning-large`
+#### `/api/v1/vision/nsfw/<model_name>`
 
-This is the endpoint for the BLIP model. An image url should be passed in with the key "url", and an "id" value can be passed in.
+This is the endpoint for a generation of labels. For detailed output see `ApiResponse` and `NSFW` classes in api.py
 
 ### Example Request
 
@@ -156,187 +243,30 @@ This is the endpoint for the BLIP model. An image url should be passed in with t
 
 ## Code Structure
 
+### Internal API
+
+There is predefined internal API in file `api.py`. The class `ImageProcessor` defines methods that any model should provide.
+
 ### Model Loading and Initialization
 
-```python
-MODEL_DIR = "models"
-KOSMOS_MODEL_PATH = os.path.join(MODEL_DIR, "kosmos-2-patch14-224")
-VIT_MODEL_PATH = os.path.join(MODEL_DIR, "vit-gpt2-image-captioning")
-BLIP_MODEL_PATH = os.path.join(MODEL_DIR, "blip-image-captioning-large")
-```
+Local models should extend `TorchImageProcessor` class that defines essential abstract methods required to be implemented.
 
-This code block creates the paths for the models. This will be useful when downloading/loading the models. It uses os.path to assemble the correct path depending on if the system is Windows-based or UNIX-based.
+`_get_model_config` returns dictionary with configuration keys `path` = path to the saved model, `source` = huggingface model name, `version` = tag of model.
 
-### Downloading Models
+Usually latest model is downloaded.
 
-```python
-def download_model(model_name, save_path):
-    if not os.path.exists(save_path):
-        print(f"Downloading {model_name}...")
-        if model_name == "microsoft/kosmos-2-patch14-224":
-            AutoModelForVision2Seq.from_pretrained(model_name).save_pretrained(save_path)
-            AutoProcessor.from_pretrained(model_name).save_pretrained(save_path)
-        elif model_name == "nlpconnect/vit-gpt2-image-captioning":
-            VisionEncoderDecoderModel.from_pretrained(model_name).save_pretrained(save_path)
-            ViTImageProcessor.from_pretrained(model_name).save_pretrained(save_path)
-            AutoTokenizer.from_pretrained(model_name).save_pretrained(save_path)
-        elif model_name == "Salesforce/blip-image-captioning-large":
-            BlipForConditionalGeneration.from_pretrained(model_name).save_pretrained(save_path)
-            BlipProcessor.from_pretrained(model_name).save_pretrained(save_path)
-        print(f"{model_name} downloaded and saved to {save_path}")
-    else:
-        print(f"{model_name} already exists at {save_path}")
-```
-
-Here the code is checking if the models already exist or not. If they don't exist it is downloading them, if they do it is skipping the downloading.
-
-```python
-os.makedirs(MODEL_DIR, exist_ok=True)
-download_model("microsoft/kosmos-2-patch14-224", KOSMOS_MODEL_PATH)
-download_model("nlpconnect/vit-gpt2-image-captioning", VIT_MODEL_PATH)
-download_model("Salesforce/blip-image-captioning-large", BLIP_MODEL_PATH)
-```
-
-Here the code is downloading the models by calling the function in the previous block.
-
-### Loading Models
-
-```python
-print("Loading models...")
-kosmosModel = AutoModelForVision2Seq.from_pretrained(KOSMOS_MODEL_PATH)
-kosmosProcessor = AutoProcessor.from_pretrained(KOSMOS_MODEL_PATH)
-
-vitModel = VisionEncoderDecoderModel.from_pretrained(VIT_MODEL_PATH)
-vitFeature_extractor = ViTImageProcessor.from_pretrained(VIT_MODEL_PATH)
-vitTokenizer = AutoTokenizer.from_pretrained(VIT_MODEL_PATH)
-
-blipProcessor = BlipProcessor.from_pretrained(BLIP_MODEL_PATH)
-blipModel = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL_PATH)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-vitModel.to(device)
-```
-
-Here the models are being loaded after they have been saved. 
-
-### Services
-
-```python
-def kosmosGenerateResponse(url):
-    try:
-        image = Image.open(requests.get(url, stream=True).raw)
-    except Exception as e:
-        return "fetchError", f"Unable to fetch image: {str(e)}"
-
-    prompt = "<grounding>An image of"
-
-    try:
-        inputs = kosmosProcessor(text=prompt, images=image, return_tensors="pt")
-        generated_ids = kosmosModel.generate(
-            pixel_values=inputs["pixel_values"],
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            image_embeds=None,
-            image_embeds_position_mask=inputs["image_embeds_position_mask"],
-            use_cache=True,
-            max_new_tokens=128,
-        )
-
-        generated_text = kosmosProcessor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-        processed_text, entities = kosmosProcessor.post_process_generation(generated_text)
-    except Exception as e:
-        return "processingError", f"Error during processing: {str(e)}"
-
-    return "ok", processed_text
-
-def vitGenerateResponse(url):
-    vitModel.to(device)    
-
-    max_length = 16
-    num_beams = 4
-    gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
-
-    def predict_step(url):
-        image = Image.open(requests.get(url, stream=True).raw)
-        images = []
-
-        if image.mode != "RGB":
-            image = image.convert(mode="RGB")
-
-        images.append(image)
-
-        pixel_values = vitFeature_extractor(images=images, return_tensors="pt").pixel_values
-        pixel_values = pixel_values.to(device)
-
-        output_ids = vitModel.generate(pixel_values, **gen_kwargs)
-
-        preds = vitTokenizer.batch_decode(output_ids, skip_special_tokens=True)
-        preds = [pred.strip() for pred in preds]
-        return preds
-
-    processed_text = predict_step(url)  # returns prediction
-
-    return "ok", processed_text
-
-def blipGenerateResponse(url):
-    img_url = url
-    raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
-
-    inputs = blipProcessor(raw_image, return_tensors="pt")
-
-    out = blipModel.generate(**inputs)
-    processed_text = blipProcessor.decode(out[0], skip_special_tokens=True)
-
-    return "ok", processed_text
-```
-
-These are the services to generate the captions. There is a function for each model.
+`_download_model` downloads specific model and persist it into `models` directory.
+`_get_model_name` returns name of model that will be used for selection based on request data
+`_load_model` loads chosen model into memory where it will stay until restart
 
 ## Request Handlers
+
+Defined in `app.py`
 
 ### Default Endpoint
 
 ```python
 @app.route('/api/v1/vision/caption', methods=['POST', 'GET'])
-def generateResponse():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    model = data.get('model')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    if model == "kosmos-2" or not model:
-        status, result = kosmosGenerateResponse(url)
-        if status == "fetchError":
-            return jsonify({"error": result}), 500
-        elif status == "processingError":
-            return jsonify({"error": result}), 500
-        elif status == "ok":
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-    elif model == "vit-gpt2-image-captioning":
-        status, result = vitGenerateResponse(url)
-        if status == "ok":
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-        return jsonify({"error": "Error during processing"})
-    elif model == "blip-image-captioning-large":
-        status, result = blipGenerateResponse(url)
-        if status =='ok':
-            if id:
-                return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-            return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": model, "version": "latest"}}), 200
-        return jsonify({"error": "Error during processing"})
 ```
 
 This is the default endpoint. It checks to see if a model is specified, and if it is it calls the service associated with that model and returns the respose with the data. If a model isn't specified it uses kosmos-2.
@@ -344,88 +274,10 @@ This is the default endpoint. It checks to see if a model is specified, and if i
 ### Specific Endpoints
 
 ```python
-@app.route('/api/v1/vision/caption/kosmos-2/patch14-224', methods=['POST', 'GET'])
-def kosmosController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = kosmosGenerateResponse(url)
-
-    if status == "fetchError":
-        return jsonify({"error": result}), 500
-    elif status == "processingError":
-        return jsonify({"error": result}), 500
-    elif status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "kosmos-2", "version": "patch14-224"}}), 200
-
-    
-
-
-@app.route('/api/v1/vision/caption/vit-gpt2-image-captioning', methods=['POST', 'GET'])
-def vitController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-    
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = vitGenerateResponse(url)
-
-    if status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "vit-gpt2-image-captioning", "version": "latest"}}), 200
-    
-    return jsonify({"error": "Error during processing"})
-
-
-
-@app.route('/api/v1/vision/caption/blip-image-captioning-large', methods=['POST', 'GET'])
-def blipController():
-    if request.method == 'POST':
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-        data = request.get_json()
-    elif request.method == 'GET':
-        data = request.args
-
-    url = data.get('url')
-    id = data.get('id')
-
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
-    
-    status, result = blipGenerateResponse(url)
-
-    if status == "ok":
-        if id:
-            return jsonify({"id": id, "result": {"caption": {"text": result}}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
-        return jsonify({"id": uuid.uuid4(), "result": {"caption": {"text": result}}, "model": {"name": "blip-image-captioning-large", "version": "latest"}}), 200
-    
-    return jsonify({"error", "Error during processing"})
-
+@app.route('/api/v1/vision/labels/<model_name>', methods=['POST', 'GET'])
 ```
 
-These are the endpoints for each model. They do some error handling, run the service, and return the response.
+There is the endpoint that dynamically routes request to `model_name` in url path variable.
 
 ## Contributors
 

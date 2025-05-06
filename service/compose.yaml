@@ -24,6 +24,12 @@ services:
       # PHOTOPRISM_UID: 1000
       # PHOTOPRISM_GID: 1000
       # PHOTOPRISM_UMASK: 0000
+      ## Ollama configuration
+      # OLLAMA_ENABLED: "true"
+      # OLLAMA_HOST: "http://ollama:11434"
+      # OLLAMA_NSFW_PROMPT: "detect NSFW"
+      # OLLAMA_LABELS_PROMPT: "give me labels"
+      # OLLAMA_CAPTION_PROMPT: "what is on the image?"
     ## Share host devices to enable CPU/GPU hardware acceleration (optional):
     # devices:
     #  - "/dev/dri:/dev/dri"

@@ -18,9 +18,12 @@ This repository [provides web services](#usage) with advanced [computer vision m
     * [Kosmos-2](#kosmos-2)
     * [VIT-GPT2](#vit-gpt2)
     * [BLIP](#blip)
+    * [nsfw_image_detector](#nsfw_image_detector)
+  * [Ultralytics](#ultralytics-)
+    * [Configuration](#configuration)
   * [Remote integrations](#remote-integrations)
     * [OLLAMA](#ollama)
-      * [Configuration](#configuration)
+      * [Configuration](#configuration-1)
     * [Models](#models)
   * [Dependencies](#dependencies)
     * [Flask](#flask)
@@ -72,6 +75,21 @@ This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-i
 This model was released by [Freepik](https://huggingface.co/Freepik/nsfw_image_detector). This model can only calculate NSFW weights within four categories: neutral, low, medium, high.
 
 Mapping is done with the best effort to the current API structure.
+
+## Ultralytics 
+
+[Ultralytics](https://github.com/ultralytics/ultralytics) provide a fast and reliable object detection and classification framework.
+
+### Configuration
+
+Ultralytics usage can be configured through environment variables.
+
+| ENV                              | Default value | Meaning                                  |
+|----------------------------------|---------------|------------------------------------------|
+| ULTRALYTICS_ENABLED              | false         | true enables loading of integration      |
+| ULTRALYTICS_MODELS               | yolo11n.pt    | name of model                            |
+| ULTRALYTICS_CONFIDENCE_THRESHOLD | 0.25          | Labels with lower confidence are dropped |
+
 
 ## Remote integrations
 

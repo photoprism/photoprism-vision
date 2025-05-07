@@ -11,6 +11,7 @@ from local_processor import LocalImageProcessor
 from ollama_processor import OllamaImageProcessor
 from api import ApiResponse, Caption, Model, Text
 from processor import ImageProcessor
+from ultralytics_processor import UltralyticsImageProcessor
 from utils import decode_image, load_image
 
 logging.basicConfig(
@@ -19,10 +20,16 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-image_processors: List[ImageProcessor] = [LocalImageProcessor()]
+image_processors: List[ImageProcessor] = []
+
+if os.getenv('LOCAL_ENABLED', 'true').lower() == 'true':
+    LocalImageProcessor()
 
 if os.getenv('OLLAMA_ENABLED', 'false').lower() == 'true':
     image_processors.append(OllamaImageProcessor())
+
+if os.getenv('ULTRALYTICS_ENABLED', 'false').lower() == 'true':
+    image_processors.append(UltralyticsImageProcessor())
 
 
 def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response | str, int]:

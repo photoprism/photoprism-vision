@@ -18,29 +18,30 @@ from transformers import (
 from typing_extensions import override
 
 from api import Labels, NSFW, NSFWProbabilities
+from configuration import MODELS_DIRECTORY
 from processor import ImageProcessor
 
 # Configuration Constants
 MODEL_CONFIG = {
-    'BASE_DIR': 'models',
+    'BASE_DIR': MODELS_DIRECTORY,
     'MODELS': {
         'kosmos-2': {
-            'path': 'models/kosmos-2-patch14-224',
+            'path': f'{MODELS_DIRECTORY}/kosmos-2-patch14-224',
             'source': 'microsoft/kosmos-2-patch14-224',
             'version': 'patch14-224',
         },
         'vit-gpt2': {
-            'path': 'models/vit-gpt2-image-captioning',
+            'path': f'{MODELS_DIRECTORY}/vit-gpt2-image-captioning',
             'source': 'nlpconnect/vit-gpt2-image-captioning',
             'version': 'latest',
         },
         'blip': {
-            'path': 'models/blip-image-captioning-large',
+            'path': f'{MODELS_DIRECTORY}/blip-image-captioning-large',
             'source': 'Salesforce/blip-image-captioning-large',
             'version': 'latest',
         },
         'nsfw_image_detector': {
-            'path': 'models/nsfw_image_detector',
+            'path': f'{MODELS_DIRECTORY}/nsfw_image_detector',
             'source': 'Freepik/nsfw_image_detector',
             'version': 'latest',
         }

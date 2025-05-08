@@ -78,9 +78,6 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
 COPY --chown=root:root requirements.txt .
 COPY --chown=root:root *.py ./
 
-# Switch to non-root user
-USER ${USER}
-
 # Folder for local AI models
 VOLUME --chown=${PHOTOPRISM_UID}:${PHOTOPRISM_GID} /app/models
 # Folder for python environment. Expected size is ~ 5 GiB

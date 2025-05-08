@@ -18,6 +18,7 @@ This repository [provides web services](#usage) with advanced [computer vision m
     * [Kosmos-2](#kosmos-2)
     * [VIT-GPT2](#vit-gpt2)
     * [BLIP](#blip)
+    * [nsfw_image_detector](#nsfw_image_detector)
   * [Remote integrations](#remote-integrations)
     * [OLLAMA](#ollama)
       * [Configuration](#configuration)
@@ -35,9 +36,11 @@ This repository [provides web services](#usage) with advanced [computer vision m
   * [Usage](#usage)
     * [API Endpoints](#api-endpoints)
       * [`/api/v1/vision/caption`](#apiv1visioncaption)
-      * [`/api/v1/vision/caption/<model_name>`](#apiv1visioncaptionmodel_name)
-      * [`/api/v1/vision/labels/<model_name>`](#apiv1visionlabelsmodel_name)
-      * [`/api/v1/vision/nsfw/<model_name>`](#apiv1visionnsfwmodel_name)
+      * [`/api/v1/vision/labels`](#apiv1visionlabels)
+      * [`/api/v1/vision/nsfw`](#apiv1visionnsfw)
+      * [`/api/v1/vision/caption/<model_name>/<model_version>`](#apiv1visioncaptionmodel_namemodel_version)
+      * [`/api/v1/vision/labels/<model_name>/<model_version>`](#apiv1visionlabelsmodel_namemodel_version)
+      * [`/api/v1/vision/nsfw/<model_name>/<model_version>`](#apiv1visionnsfwmodel_namemodel_version)
     * [Example Request](#example-request)
     * [Example Response](#example-response)
   * [Code Structure](#code-structure)
@@ -200,17 +203,26 @@ Alternatively, you can perform `GET` requests with URL-encoded query parameters,
 
 #### `/api/v1/vision/caption`
 
-This is the default endpoint of the API. An image url should be passed in with the key "url" or "images" that contains array of base64 encoded images, and optionally a "model" and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to using the kosmos-2 model.
+This is the default endpoint of the captioning API. An image url should be passed in with the key "url" or "images" that contains array of base64 encoded images, "model" used for inherence and optionally and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to configured model.
 
-#### `/api/v1/vision/caption/<model_name>`
+#### `/api/v1/vision/labels`
+
+This is the default endpoint of the labels API. An image url should be passed in with the key "url" or "images" that contains array of base64 encoded images, "model" used for inherence and optionally and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to configured model.
+
+#### `/api/v1/vision/nsfw`
+
+This is the default endpoint of the nsfw API. An image url should be passed in with the key "url" or "images" that contains array of base64 encoded images, "model" used for inherence and optionally and/or "id" value can be passed in. The "model" key allows the user to specify which of the three models they would like to use. If no model is given, the application will default to configured model.
+
+
+#### `/api/v1/vision/caption/<model_name>/<model_version>`
 
 This is the endpoint for a generation of captions. For detailed output see `ApiResponse` and `Caption` classes in api.py
 
-#### `/api/v1/vision/labels/<model_name>`
+#### `/api/v1/vision/labels/<model_name>/<model_version>`
 
 This is the endpoint for a generation of labels. For detailed output see `ApiResponse` and `Labels` classes in api.py
 
-#### `/api/v1/vision/nsfw/<model_name>`
+#### `/api/v1/vision/nsfw/<model_name>/<model_version>`
 
 This is the endpoint for a generation of labels. For detailed output see `ApiResponse` and `NSFW` classes in api.py
 
@@ -221,7 +233,8 @@ This is the endpoint for a generation of labels. For detailed output see `ApiRes
 ```json
 {
     "id": "b0db2187-7a09-438c-8649-a9c6c0f7b8a1",
-    "model": "kosmos-2"
+    "model": "kosmos-2",
+    "version": "latest",
     "url": "https://dl.photoprism.app/img/team/avatar.jpg",
 }
 ```

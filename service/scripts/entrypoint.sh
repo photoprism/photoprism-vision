@@ -4,4 +4,11 @@
 
 . ./venv/bin/activate
 
-gunicorn "$@"
+if [ ! -z "$PHOTOPRISM_UID" ]; then
+  echo "Switching to user id $PHOTOPRISM_UID..."
+  exec gosu $PHOTOPRISM_UID gunicorn "$@"
+else
+  # Run as default user
+  exec gunicorn "$@"
+fi
+

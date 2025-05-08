@@ -16,6 +16,7 @@ services:
     ports:
       - "5000:5000"
     ## Set environment variables to configure the service (optional):
+    user: 1000:1000
     environment:
       TF_CPP_MIN_LOG_LEVEL: 1                        # show TensorFlow debug logs
       ## Setting the following variables will run the service as a non-root user:

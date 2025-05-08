@@ -69,7 +69,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
   echo 'force-confold' > /etc/dpkg/dpkg.cfg.d/force-confold && \
   apt-get update && apt-get -qq dist-upgrade && \
   echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
-  echo 'export PS1="\u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
+  echo 'export PS1="📷 \u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
   chmod u=rx,go=rx /app/scripts/*.sh && \
   cp /etc/skel/.bashrc /home/${PHOTOPRISM_USER}/.bashrc && \
   cleanup.sh

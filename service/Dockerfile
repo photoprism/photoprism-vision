@@ -71,7 +71,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
   echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
   echo 'export PS1="\u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
   chmod u=rx,go=rx /app/scripts/*.sh && \
-  cp /etc/skel/.bashrc /home/photoprism/.bashrc && \
+  cp /etc/skel/.bashrc /home/${PHOTOPRISM_USER}/.bashrc && \
   cleanup.sh
 
 # Initialize dependencies

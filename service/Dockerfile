@@ -29,16 +29,19 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG BUILD_TAG
-ARG USER=photoprism
-ARG UID=1000
+ARG PHOTOPRISM_USER=photoprism
+ARG PHOTOPRISM_UID=1000
+ARG PHOTOPRISM_GID=1000
 
+ENV PHOTOPRISM_UID=$PHOTOPRISM_UID
+ENV PHOTOPRISM_GID=$PHOTOPRISM_GID
 
 # Copy source to image.
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd -r ${USER} && \
-    useradd -r -g ${USER} -u ${UID} -m ${USER}
+## Create non-root user
+RUN groupadd -g ${PHOTOPRISM_GID} ${PHOTOPRISM_USER} && \
+    useradd -r -g ${PHOTOPRISM_GID} -u ${PHOTOPRISM_UID} -m ${PHOTOPRISM_USER}
 
 # Set environment variables.
 ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scripts:/root/.cargo/bin:/app/venv/bin" \
@@ -80,9 +83,9 @@ COPY --chown=root:root *.py ./
 USER ${USER}
 
 # Folder for local AI models
-VOLUME --chown=${USER}:${USER} /app/models
+VOLUME --chown=${PHOTOPRISM_UID}:${PHOTOPRISM_GID} /app/models
 # Folder for python environment. Expected size is ~ 5 GiB
-VOLUME --chown=${USER}:${USER} /app/venv
+VOLUME --chown=${PHOTOPRISM_UID}:${PHOTOPRISM_GID} /app/venv
 
 # Expose HTTP service port.
 EXPOSE 5000

@@ -2,7 +2,7 @@ import base64
 import io
 import logging
 import os
-from typing import Any, Tuple, override
+from typing import override
 
 import ollama
 from PIL.Image import Image
@@ -28,19 +28,24 @@ nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT',
 
 class OllamaImageProcessor(ImageProcessor):
     def __init__(self):
-        self._models_cache = {model['model'] for model in ollama.list()['models']}
+        self._models_cache = self._load_models()
 
-    def can_process(self, model_name: str) -> bool:
-        return model_name in self._models_cache
+    def can_process(self, model_name: str, model_version: str) -> bool:
+        model_name = self._get_model_name(model_name, model_version)
+        cached_model = model_name in self._models_cache
+
+        if not cached_model:
+            return model_name in self._load_models()
+        return cached_model
 
     @override
-    def generate_caption(self, model_name: str, image: Image) -> Tuple[str, str]:
-        return self._generate_with_prompt(model_name, [image], caption_prompt)
+    def generate_caption(self, model_name: str, model_version: str, image: Image) -> tuple[str, str]:
+        return self._generate_with_prompt(model_name, model_version, [image], caption_prompt)
 
     @override
-    def generate_labels(self, model_name: str, images: list[Image]) -> Tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:
         schema = Labels.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, images, labels_prompt, schema=schema)
+        status, result = self._generate_with_prompt(model_name, model_version, images, labels_prompt, schema=schema)
         if status == 'ok':
             try:
                 labels = Labels.model_validate_json(result)
@@ -50,12 +55,12 @@ class OllamaImageProcessor(ImageProcessor):
         return status, result
 
     @override
-    def detect_nsfw(self, model_name: str, images: Image) -> Tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, model_version: str, images: Image) -> tuple[str, NSFW | str]:
         """
         Tries to detect if the image is NSFW. Accurate detection is not guaranteed.
         """
         schema = NSFW.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, [images], nsfw_prompt, schema=schema)
+        status, result = self._generate_with_prompt(model_name, model_version, [images], nsfw_prompt, schema=schema)
         if status == 'ok':
             try:
                 probabilities = NSFW.model_validate_json(result)
@@ -64,11 +69,18 @@ class OllamaImageProcessor(ImageProcessor):
                 return 'error', f'Failed to parse labels JSON: {str(e)}'
         return status, result
 
-    def _generate_with_prompt(self, model_name: str, images: list[Image], prompt: str, schema=None) -> Tuple[str, Any]:
+    def _generate_with_prompt(
+            self,
+            model_name: str,
+            model_version: str,
+            images: list[Image],
+            prompt: str,
+            schema=None
+    ) -> tuple[str, any]:
         try:
             base64_images = [self._convert_image_to_base64(image) for image in images]
             response = ollama.generate(
-                model=model_name,
+                model=self._get_model_name(model_name, model_version),
                 prompt=prompt,
                 images=base64_images,
                 format=schema
@@ -76,6 +88,14 @@ class OllamaImageProcessor(ImageProcessor):
             return self._process_ollama_response(response)
         except Exception as e:
             return 'error', f'Ollama processing error: {str(e)}'
+
+    @staticmethod
+    def _load_models():
+        return {model['model'] for model in ollama.list()['models']}
+
+    @staticmethod
+    def _get_model_name(model_name: str, model_version: str) -> str:
+        return f'{model_name}:{model_version}'
 
     @staticmethod
     def _convert_image_to_base64(image: Image) -> str:
@@ -86,7 +106,7 @@ class OllamaImageProcessor(ImageProcessor):
         return base64.b64encode(img_byte_arr).decode('utf-8')
 
     @staticmethod
-    def _process_ollama_response(response) -> Tuple[str, str]:
+    def _process_ollama_response(response) -> tuple[str, str]:
         logger.debug(response)
 
         if response and response.response:

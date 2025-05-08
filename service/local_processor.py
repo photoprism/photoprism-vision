@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Tuple, Dict
 from abc import ABC, abstractmethod
 
 import torch
@@ -75,7 +74,7 @@ class TorchImageProcessor(ABC):
             logger.info(f"Downloaded {source} to {path}")
 
     @abstractmethod
-    def _get_model_config(self) -> Dict[str, str]:
+    def _get_model_config(self) -> dict[str, str]:
         """Return the model configuration."""
         pass
 
@@ -102,7 +101,7 @@ class TorchImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_caption(self, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, image: Image) -> tuple[str, str]:
         pass
 
 
@@ -110,7 +109,7 @@ class Kosmos2Processor(TorchImageProcessor):
     """Processor for the Kosmos-2 model."""
 
     @override
-    def _get_model_config(self) -> Dict[str, str]:
+    def _get_model_config(self) -> dict[str, str]:
         return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
     @override
@@ -129,7 +128,7 @@ class Kosmos2Processor(TorchImageProcessor):
         self.processor = AutoProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, image: Image) -> tuple[str, str]:
         try:
             self.load_if_needed()
 
@@ -158,7 +157,7 @@ class VitGpt2Processor(TorchImageProcessor):
     """Processor for the ViT-GPT2 model."""
 
     @override
-    def _get_model_config(self) -> Dict[str, str]:
+    def _get_model_config(self) -> dict[str, str]:
         return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
     @override
@@ -183,7 +182,7 @@ class VitGpt2Processor(TorchImageProcessor):
         self.model.to(self.processor['device'])
 
     @override
-    def generate_caption(self, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, image: Image) -> tuple[str, str]:
         try:
             self.load_if_needed()
 
@@ -217,7 +216,7 @@ class BlipImageProcessor(TorchImageProcessor):
     """Processor for the BLIP model."""
 
     @override
-    def _get_model_config(self) -> Dict[str, str]:
+    def _get_model_config(self) -> dict[str, str]:
         return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
     @override
@@ -236,7 +235,7 @@ class BlipImageProcessor(TorchImageProcessor):
         self.processor = BlipProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, image: Image) -> tuple[str, str]:
         try:
             self.load_if_needed()
 
@@ -258,7 +257,7 @@ class NSFWImageProcessor(TorchImageProcessor):
     """Processor for NSFW image detection."""
 
     @override
-    def _get_model_config(self) -> Dict[str, str]:
+    def _get_model_config(self) -> dict[str, str]:
         return MODEL_CONFIG['MODELS'][self._get_model_name()]
 
     @override
@@ -277,10 +276,10 @@ class NSFWImageProcessor(TorchImageProcessor):
         self.processor = AutoProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, image: Image) -> tuple[str, str]:
         return 'error', "This model does not support caption generation"
 
-    def detect_nsfw(self, image: Image) -> Tuple[str, NSFW | str]:
+    def detect_nsfw(self, image: Image) -> tuple[str, NSFW | str]:
         try:
             self.load_if_needed()
 
@@ -327,6 +326,7 @@ class ProcessorFactory:
             raise ValueError(f"Unknown model: {model_name}")
 
 
+# NOTE This processor ignores model_version parameter
 class LocalImageProcessor(ImageProcessor):
     """Manager class that coordinates local image processors."""
 
@@ -362,22 +362,22 @@ class LocalImageProcessor(ImageProcessor):
         return self.processors[model_name]
 
     @override
-    def can_process(self, model_name: str) -> bool:
+    def can_process(self, model_name: str, model_version: str) -> bool:
         """Check if the specified model is supported."""
         return model_name in MODEL_CONFIG['MODELS']
 
     @override
-    def generate_caption(self, model_name: str, image: Image) -> Tuple[str, str]:
+    def generate_caption(self, model_name: str, model_version: str, image: Image) -> tuple[str, str]:
         processor = self.get_processor(model_name)
         return processor.generate_caption(image)
 
     @override
-    def generate_labels(self, model_name: str, images: list[Image]) -> Tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:
         # TODO: Implement label generation for local models
         return 'error', 'Local model does not support label generation yet. Use the Ollama API instead.'
 
     @override
-    def detect_nsfw(self, model_name: str, image: Image) -> Tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, model_version: str, image: Image) -> tuple[str, NSFW | str]:
         """Detect NSFW content in the image using the specified model."""
         processor = self.get_processor(model_name)
         if isinstance(processor, NSFWImageProcessor):

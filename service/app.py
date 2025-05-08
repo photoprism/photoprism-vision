@@ -2,11 +2,9 @@ import logging
 import os
 import uuid
 from http import HTTPStatus
-from typing import Any, List, Tuple
 
 from flask import Flask, Response, jsonify, request
 
-from local_processor import MODEL_CONFIG
 from local_processor import LocalImageProcessor
 from ollama_processor import OllamaImageProcessor
 from api import ApiResponse, Caption, Model, Text
@@ -19,13 +17,13 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-image_processors: List[ImageProcessor] = [LocalImageProcessor()]
+image_processors: list[ImageProcessor] = [LocalImageProcessor()]
 
 if os.getenv('OLLAMA_ENABLED', 'false').lower() == 'true':
     image_processors.append(OllamaImageProcessor())
 
 
-def create_response(data: Any, status_code: int = HTTPStatus.OK) -> Tuple[Response | str, int]:
+def create_response(data: any, status_code: int = HTTPStatus.OK) -> tuple[Response | str, int]:
     if isinstance(data, ApiResponse):
         return data.model_dump_json(), status_code
     return jsonify(data), status_code
@@ -41,28 +39,48 @@ def parse_image_from_request():
     return data, image
 
 
+def parse_model_info_from_request() -> tuple[str, str]:
+    data = request.get_json() if request.is_json else request.args
+    if data.get('model'):
+        return data.get('model'), data.get('version', 'latest')
+    raise ValueError("model name is required")
+
+
 @app.route('/api/v1/vision/caption', methods=['POST', 'GET'])
-def default_process_image_caption() -> Tuple[Response, int]:
-    return process_image_caption("kosmos-2")
+def json_process_image_caption() -> tuple[Response, int]:
+    model, version = parse_model_info_from_request()
+    return process_image_caption(model, version)
 
 
-@app.route('/api/v1/vision/caption/<model_name>', methods=['POST', 'GET'])
-def process_image_caption(model_name: str) -> Tuple[Response, int]:
+@app.route('/api/v1/vision/labels', methods=['POST', 'GET'])
+def json_process_image_labels() -> tuple[Response, int]:
+    model, version = parse_model_info_from_request()
+    return process_image_labels(model, version)
+
+
+@app.route('/api/v1/vision/nsfw', methods=['POST', 'GET'])
+def json_detect_nsfw() -> tuple[Response, int]:
+    model, version = parse_model_info_from_request()
+    return detect_nsfw(model, version)
+
+
+@app.route('/api/v1/vision/caption/<model_name>/<model_version>', methods=['POST', 'GET'])
+def process_image_caption(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data, image = parse_image_from_request()
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
-            if processor.can_process(model_name):
-                status, result = processor.generate_caption(model_name, image)
+            if processor.can_process(model_name, model_version):
+                status, result = processor.generate_caption(model_name, model_version, image)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
                         result=Caption(caption=Text(text=result)),
                         model=Model(
                             name=model_name,
-                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                            version=model_version
                         ),
                     )
                     return create_response(response_data, HTTPStatus.OK)
@@ -73,8 +91,8 @@ def process_image_caption(model_name: str) -> Tuple[Response, int]:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
-@app.route('/api/v1/vision/labels/<model_name>', methods=['POST', 'GET'])
-def process_image_labels(model_name: str) -> Tuple[Response, int]:
+@app.route('/api/v1/vision/labels/<model_name>/<model_version>', methods=['POST', 'GET'])
+def process_image_labels(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data = request.get_json() if request.is_json else request.args
         images = []
@@ -87,15 +105,15 @@ def process_image_labels(model_name: str) -> Tuple[Response, int]:
             return create_response({'error': "images or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
-            if processor.can_process(model_name):
-                status, result = processor.generate_labels(model_name, images)
+            if processor.can_process(model_name, model_version):
+                status, result = processor.generate_labels(model_name, model_version, images)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
                         result=result,
                         model=Model(
                             name=model_name,
-                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                            version=model_version
                         ),
                     )
                     return create_response(response_data, HTTPStatus.OK)
@@ -106,23 +124,23 @@ def process_image_labels(model_name: str) -> Tuple[Response, int]:
         return create_response({'error': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
-@app.route('/api/v1/vision/nsfw/<model_name>', methods=['POST', 'GET'])
-def detect_nsfw(model_name: str) -> Tuple[Response, int]:
+@app.route('/api/v1/vision/nsfw/<model_name>/<model_version>', methods=['POST', 'GET'])
+def detect_nsfw(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data, image = parse_image_from_request()
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
-            if processor.can_process(model_name):
-                status, result = processor.detect_nsfw(model_name, image)
+            if processor.can_process(model_name, model_version):
+                status, result = processor.detect_nsfw(model_name, model_version, image)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
                         result=result,
                         model=Model(
                             name=model_name,
-                            version=MODEL_CONFIG['MODELS'].get(model_name, {}).get('version', 'latest')
+                            version=model_version
                         ),
                     )
                     return create_response(response_data, HTTPStatus.OK)

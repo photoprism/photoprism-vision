@@ -81,9 +81,9 @@ COPY --chown=root:root requirements.txt .
 COPY --chown=root:root *.py ./
 
 # Folder for local AI models
-VOLUME --chown=${PHOTOPRISM_UID}:${PHOTOPRISM_GID} /app/models
+VOLUME /app/models
 # Folder for python environment. Expected size is ~ 5 GiB
-VOLUME --chown=${PHOTOPRISM_UID}:${PHOTOPRISM_GID} /app/venv
+VOLUME /app/venv
 
 # Expose HTTP service port.
 EXPOSE 5000

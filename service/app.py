@@ -9,7 +9,7 @@ from local_processor import LocalImageProcessor
 from ollama_processor import OllamaImageProcessor
 from api import ApiResponse, Caption, Model, Text
 from processor import ImageProcessor
-from utils import decode_image, load_image
+from utils import decode_image, decode_images, load_image
 
 logging.basicConfig(
     level=logging.INFO,
@@ -99,7 +99,7 @@ def process_image_labels(model_name: str, model_version: str) -> tuple[Response,
         if data.get('url'):
             images = [load_image(data['url'])]
         elif data.get('images'):
-            images = decode_image(data['images'])
+            images = decode_images(data['images'])
 
         if not images:
             return create_response({'error': "images or url missing"}, HTTPStatus.BAD_REQUEST)

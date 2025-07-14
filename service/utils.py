@@ -17,3 +17,10 @@ def decode_image(base64image: str) -> ImageType:
         return Image.open(io.BytesIO(base64.b64decode(image_data)))
     else:
         raise ValueError('Invalid base64 image format')
+
+def decode_images(base64image_list: list[str]) -> list[ImageType]:
+    ret = []
+    for base64image in base64image_list:
+        ret.append(decode_image(base64image))
+
+    return ret

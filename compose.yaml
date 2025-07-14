@@ -13,11 +13,7 @@ services:
     ## Set environment variables to configure the service (optional):
     environment:
       TF_CPP_MIN_LOG_LEVEL: 2                        # show all TensorFlow logs except INFO and WARNING
-      ## Setting the following variables will run the service as a non-root user:
-      # PHOTOPRISM_UID: 1000
-      # PHOTOPRISM_GID: 1000
-      # PHOTOPRISM_UMASK: 0000
-      ## Ollama configuration
+      ## Ollama client configuration
       OLLAMA_ENABLED: "true"
       OLLAMA_HOST: "http://ollama:11434"
       # OLLAMA_NSFW_PROMPT: "detect NSFW"
@@ -56,6 +52,13 @@ services:
     ports:
       - "11434:11434"
     environment:
+      ## Ollama server configuration
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_NUM_PARALLEL: "2"
+      OLLAMA_MAX_QUEUE: "100"
+      OLLAMA_KEEP_ALIVE: "-1"
+      OLLAMA_MODELS: "/root/.ollama"
       ## NVIDIA Container Toolkit
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "compute,utility"

@@ -19,9 +19,9 @@ services:
     user: 1000:1000
     environment:
       TF_CPP_MIN_LOG_LEVEL: 1                        # show TensorFlow debug logs
-      ## Setting the following variables will run the service as a non-root user:
-      # PHOTOPRISM_UID: 1000
-      # PHOTOPRISM_GID: 1000
+      ## Service user configuration:
+      PHOTOPRISM_UID: 1000
+      PHOTOPRISM_GID: 1000
       # PHOTOPRISM_UMASK: 0000
       ## Ollama client configuration
       OLLAMA_ENABLED: "true"

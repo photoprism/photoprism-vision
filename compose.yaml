@@ -12,10 +12,14 @@ services:
     user: 1000:1000
     ## Set environment variables to configure the service (optional):
     environment:
-      TF_CPP_MIN_LOG_LEVEL: 2                        # show all TensorFlow logs except INFO and WARNING
+      ## Service user configuration:
+      PHOTOPRISM_UID: 1000
+      PHOTOPRISM_GID: 1000
       ## Ollama client configuration
       OLLAMA_ENABLED: "true"
       OLLAMA_HOST: "http://ollama:11434"
+      ## TensorFlow configuration:
+      TF_CPP_MIN_LOG_LEVEL: 2                        # show all TensorFlow logs except INFO and WARNING
       # OLLAMA_NSFW_PROMPT: "detect NSFW"
       # OLLAMA_LABELS_PROMPT: "give me labels"
       # OLLAMA_CAPTION_PROMPT: "what is on the image?"

@@ -10,6 +10,9 @@ services:
     ports:
       - "5000:5000"
     user: 1000:1000
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
     ## Set environment variables to configure the service (optional):
     environment:
       ## Service user configuration:

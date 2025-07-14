@@ -15,8 +15,11 @@ services:
     ## Make the service accessible on port 5000 (only change the left-hand side if necessary, e.g. “80:5000”):
     ports:
       - "5000:5000"
-    ## Set environment variables to configure the service (optional):
     user: 1000:1000
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    ## Set environment variables to configure the service (optional):
     environment:
       TF_CPP_MIN_LOG_LEVEL: 1                        # show TensorFlow debug logs
       ## Service user configuration:

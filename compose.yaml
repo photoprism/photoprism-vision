@@ -46,7 +46,6 @@ services:
       - models:/app/models
       - venv:/app/venv
 
-
   ## Ollama Large Language Models
   ## https://github.com/ollama/ollama
   ## To install models listed at https://github.com/ollama/ollama?tab=readme-ov-file#model-library:
@@ -69,7 +68,6 @@ services:
             - driver: "nvidia"
               capabilities: [ gpu ]
               count: "all"
-
 
 ## Create named volume for ollama models
 volumes:

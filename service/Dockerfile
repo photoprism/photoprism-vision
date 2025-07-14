@@ -29,6 +29,18 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 ARG TARGETARCH
 ARG TARGETPLATFORM
 ARG BUILD_TAG
+ARG PHOTOPRISM_USER=photoprism
+ARG PHOTOPRISM_UID=1000
+ARG PHOTOPRISM_GID=1000
+
+ENV PHOTOPRISM_UID=$PHOTOPRISM_UID
+ENV PHOTOPRISM_GID=$PHOTOPRISM_GID
+
+WORKDIR /app
+
+## Create non-root user
+RUN groupadd -g ${PHOTOPRISM_GID} ${PHOTOPRISM_USER} && \
+    useradd -r -g ${PHOTOPRISM_GID} -u ${PHOTOPRISM_UID} -m ${PHOTOPRISM_USER}
 
 # Set environment variables.
 ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scripts:/root/.cargo/bin:/app/venv/bin" \
@@ -39,20 +51,14 @@ ENV PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin:/app/scri
   DOCKER_ENV="prod" \
   PS1="\u@${DOCKER_TAG}:\w\$ " \
   LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" \
-  NODE_ENV="production" \
   DEBIAN_FRONTEND="noninteractive" \
   TMPDIR="/tmp" \
   TF_CPP_MIN_LOG_LEVEL="2" \
   MALLOC_ARENA_MAX="4" \
-  GOPATH="/go" \
-  GOBIN="/usr/local/bin" \
-  GO111MODULE="on" \
-  CGO_CFLAGS="-g -O2 -Wno-return-local-addr" \
-  PROG="flask"
+  PROG="gunicorn"
 
-# Copy source to image.
-WORKDIR /app
-COPY --chown=root:root --chmod="u=rwX,go=rX" . .
+
+COPY --chown=root:root ./scripts ./scripts
 
 # Install system dependencies.
 RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
@@ -61,26 +67,29 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
   echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/80forceyes && \
   echo 'APT::Get::Fix-Missing "true";' > /etc/apt/apt.conf.d/80fixmissing && \
   echo 'force-confold' > /etc/dpkg/dpkg.cfg.d/force-confold && \
-  apt-get update && apt-get -qq dist-upgrade && \
-  apt-get -qq install \
-  curl build-essential libhdf5-dev make bash nano rsync pkg-config util-linux && \
+  apt-get update && \
+  apt-get -qq dist-upgrade && \
+  apt-get install gosu && \
   echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
-  echo 'export PS1="\u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
-  chmod u=rwx,go=rx /app/scripts/*.sh && \
-  cp /etc/skel/.bashrc /root/.bashrc && \
+  echo 'export PS1="📷 \u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
+  chmod u=rx,go=rx /app/scripts/*.sh && \
+  cp /etc/skel/.bashrc /home/${PHOTOPRISM_USER}/.bashrc && \
   cleanup.sh
 
-# Install Rust.
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Initialize dependencies
+COPY --chown=root:root requirements.txt .
+COPY --chown=root:root *.py ./
 
-# Install Python dependencies.
-RUN requirements.sh
+# Folder for local AI models
+VOLUME /app/models
+# Folder for python environment. Expected size is ~ 5 GiB
+VOLUME /app/venv
 
 # Expose HTTP service port.
 EXPOSE 5000
 
 # Set container entrypoint script.
-ENTRYPOINT ["/app/venv/bin/flask"]
+ENTRYPOINT ["entrypoint.sh"]
 
 # Listen at 0.0.0.0:5000 when the container is started.
-CMD [ "--app", "app", "run", "--no-debug", "--host", "0.0.0.0"]
+CMD [ "--bind", "0.0.0.0:5000", "app:app"]

@@ -1,19 +1,13 @@
-#!/usr/bin/env bash
-
-# Abort if not executed as root.
-if [[ $(id -u) != "0" ]]; then
-  echo "Usage: run ${0##*/} as root" 1>&2
-  exit 1
-fi
+#!/bin/bash
 
 set -o errexit
 
-# Create virtual environment.
-python3 -m venv ./venv
-. ./venv/bin/activate
+VENV_DIRECTORY="/app/venv"
 
-# Upgrade pip package manager.
-./venv/bin/pip install --disable-pip-version-check --no-cache-dir --upgrade pip
-
-# Install Python dependencies.
-./venv/bin/pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
+[ ! -f "$VENV_DIRECTORY/bin/activate" ] && \
+  echo "Creating python virtual environment..." \
+  && python3 -m venv $VENV_DIRECTORY \
+  && source $VENV_DIRECTORY/bin/activate \
+  && pip install --disable-pip-version-check --no-cache-dir -r requirements.txt \
+  && exit 0 \
+  || echo "venv already initialized"

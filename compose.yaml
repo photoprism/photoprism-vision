@@ -9,6 +9,7 @@ services:
     ## Make the service accessible on port 5000 (only change the left-hand side if necessary, e.g. “80:5000”):
     ports:
       - "5000:5000"
+    user: 1000:1000
     ## Set environment variables to configure the service (optional):
     environment:
       TF_CPP_MIN_LOG_LEVEL: 2                        # show all TensorFlow logs except INFO and WARNING
@@ -41,6 +42,10 @@ services:
             - driver: "nvidia"
               capabilities: [ gpu ]
               count: "all"
+    volumes:
+      - models:/app/models
+      - venv:/app/venv
+
 
   ## Ollama Large Language Models
   ## https://github.com/ollama/ollama
@@ -65,7 +70,10 @@ services:
               capabilities: [ gpu ]
               count: "all"
 
+
 ## Create named volume for ollama models
 volumes:
+  models:
+  venv:
   ollama:
     driver: local

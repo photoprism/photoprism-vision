@@ -12,7 +12,7 @@ from api import Labels, NSFW
 
 logger = logging.getLogger(__name__)
 
-caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Write a natural-sounding caption that briefly describes the main content of the image in up to 3 sentences. It should begin directly with the type and number of subjects and action, such as "Two sleeping cats," "A bright poppy flower," or "Police officers drinking coffee next to a farmhouse." Omit text formatting and avoid any meta-language or phrases such as "This picture," "The picture," "The photo," "There are," "Here is," or "A picture of".')
+caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Create a caption without text formatting that sounds natural and briefly describes the main content of the picture in up to three sentences. Avoid meta-language and do not start the caption with phrases like "This image", "The image", "This picture", "The picture", "A picture of", "Here are", or "There is". Instead begin the description by identifying the type and number of subjects as well as any actions they perform. Use explicit language to describe the scene if necessary for a proper understanding.')
 labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for given images.')
 # minicpm-v generates usable output for NSFW detection, but it's not guaranteed to be accurate.
 nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT',

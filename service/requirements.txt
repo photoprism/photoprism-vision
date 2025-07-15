@@ -1,14 +1,14 @@
 ### Required Python packages.
 
-Flask==3.1.0
-pillow==11.2.1
-requests==2.32.3
-torch==2.7.0
-transformers==4.51.3
-hf-xet==1.1.0
-timm==1.0.15
-ollama==0.4.8
-pydantic==2.11.4
+Flask==3.1.1
+pillow==11.3.0
+requests==2.32.4
+torch==2.7.1
+transformers==4.53.2
+hf-xet==1.1.5
+timm==1.0.17
+ollama==0.5.1
+pydantic==2.11.7
 gunicorn==23.0.0
 
 ### Intel-specific libraries not available for ARM64-based devices.

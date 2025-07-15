@@ -12,19 +12,16 @@ from api import Labels, NSFW
 
 logger = logging.getLogger(__name__)
 
-caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Create a caption without text formatting that sounds natural and briefly describes the main content of the picture in up to three sentences. Avoid meta-language and do not start the caption with phrases like "This image", "The image", "This picture", "The picture", "A picture of", "Here are", or "There is". Instead begin the description by identifying the type and number of subjects as well as any actions they perform. Use explicit language to describe the scene if necessary for a proper understanding.')
-labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate from 1 to 2 worded labels for given images.')
+caption_prompt = os.environ.get('OLLAMA_CAPTION_PROMPT', 'Create an interesting caption that sounds natural and briefly describes the visual content in up to 3 sentences. Avoid text formatting, meta-language, and filler words. Do not start captions with phrases such as "This image", "The image", "This picture", "The picture", "A picture of", "Here are", or "There is". Instead, start describing the content by identifying the subjects, location, and any actions that might be performed. Use explicit language to describe the scene if necessary for a proper understanding.')
+labels_prompt = os.environ.get('OLLAMA_LABELS_PROMPT', 'Generate one- or two-word labels that best describe the image.')
 # minicpm-v generates usable output for NSFW detection, but it's not guaranteed to be accurate.
-nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT',
-                             'Analyze this image and return probabilities in the following categories between 0 and 1 '
-                             '(higher value means more likely):\n'
-                             'Neutral: For non-sensitive content (>0.25 means not NSFW)\n'
-                             'Drawing: Likelihood the image is an illustration/drawing\n'
-                             'Hentai: Likelihood the image contains anime/manga adult content\n'
-                             'Porn: Likelihood the image contains explicit adult content\n'
-                             'Sexy: Likelihood the image contains suggestive adult content'
-                             )
-
+nsfw_prompt = os.environ.get('OLLAMA_NSFW_PROMPT', '''Analyze this image and provide probability estimates in the following categories, ranging from 0 to 1 (higher values indicate a higher probability):
+Neutral: Likelihood that the content is neutral and not sexual in any way
+Drawing: Likelihood that the image is a sexual illustration or drawing
+Hentai: Likelihood that the image contains adult anime or manga content
+Porn: Likelihood that the image contains explicit adult content
+Sexy: Likelihood that the image contains suggestive adult content
+''')
 
 class OllamaImageProcessor(ImageProcessor):
     def __init__(self):

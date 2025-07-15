@@ -29,9 +29,22 @@ services:
       ## Ollama client configuration
       OLLAMA_ENABLED: "true"
       OLLAMA_HOST: "http://ollama:11434"
-      # OLLAMA_NSFW_PROMPT: "detect NSFW"
-      # OLLAMA_LABELS_PROMPT: "give me labels"
-      # OLLAMA_CAPTION_PROMPT: "what is on the image?"
+      # OLLAMA_NSFW_PROMPT: |
+      #   Analyze this image and provide probability estimates in the following categories, ranging from 0 to 1 (higher values indicate a higher probability):
+      #   Neutral: Likelihood that the content is neutral and not sexual in any way
+      #   Drawing: Likelihood that the image is a sexual illustration or drawing
+      #   Hentai: Likelihood that the image contains adult anime or manga content
+      #   Porn: Likelihood that the image contains explicit adult content
+      #   Sexy: Likelihood that the image contains suggestive adult content
+      # OLLAMA_LABELS_PROMPT: |
+      #   Generate one- or two-word labels that best describe the image.
+      # OLLAMA_CAPTION_PROMPT: Create an interesting caption that sounds natural and briefly describes
+      #   the visual content in up to 3 sentences. Avoid text formatting, meta-language,
+      #   and filler words. Do not start captions with phrases such as "This image", "The
+      #   image", "This picture", "The picture", "A picture of", "Here are", or "There is".
+      #   Instead, start describing the content by identifying the subjects, location, and
+      #   any actions that might be performed. Use explicit language to describe the scene
+      #   if necessary for a proper understanding.
       ## NVIDIA Container Toolkit
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "compute,utility"

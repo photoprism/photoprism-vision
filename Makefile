@@ -44,10 +44,10 @@ endif
 
 venv: service
 service/venv:
-	(cd service && make venv)
+	make -C service venv
 
 upgrade:
-	(cd service && make upgrade)
+	make -C service upgrade
 
 # Declare all targets as "PHONY", see https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html.
 MAKEFLAGS += --always-make

@@ -11,11 +11,12 @@ class ImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_caption(self, model_name: str, model_version: str, image: Image) -> tuple[str, str]:
+    def generate_caption(self, model_name: str, model_version: str, image: Image, prompt: str) -> tuple[str, str]:
         """
         :param model_name: name of the requested model
         :param model_version: version of the requested model
         :param image: Image object
+        :param prompt: custom prompt
         """
         pass
 

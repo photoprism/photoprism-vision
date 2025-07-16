@@ -45,6 +45,11 @@ def parse_model_info_from_request() -> tuple[str, str]:
         return data.get('model'), data.get('version', 'latest')
     raise ValueError("model name is required")
 
+def parse_prompt_from_request():
+    data = request.get_json() if request.is_json else request.args
+    if data.get('prompt'):
+        return data.get('prompt')
+    return 'default'
 
 @app.route('/api/v1/vision/caption', methods=['POST', 'GET'])
 def json_process_image_caption() -> tuple[Response, int]:
@@ -68,12 +73,14 @@ def json_detect_nsfw() -> tuple[Response, int]:
 def process_image_caption(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data, image = parse_image_from_request()
+        prompt = parse_prompt_from_request()
+
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
             if processor.can_process(model_name, model_version):
-                status, result = processor.generate_caption(model_name, model_version, image)
+                status, result = processor.generate_caption(model_name, model_version, image, prompt)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),

@@ -101,7 +101,7 @@ class TorchImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_caption(self, image: Image) -> tuple[str, str]:
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
         pass
 
 
@@ -128,11 +128,12 @@ class Kosmos2Processor(TorchImageProcessor):
         self.processor = AutoProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> tuple[str, str]:
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
         try:
             self.load_if_needed()
+            if prompt == '' or prompt == 'default':
+                prompt = "<grounding>An image of"
 
-            prompt = "<grounding>An image of"
             inputs = self.processor(text=prompt, images=image, return_tensors="pt")
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -182,7 +183,7 @@ class VitGpt2Processor(TorchImageProcessor):
         self.model.to(self.processor['device'])
 
     @override
-    def generate_caption(self, image: Image) -> tuple[str, str]:
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
         try:
             self.load_if_needed()
 
@@ -235,14 +236,16 @@ class BlipImageProcessor(TorchImageProcessor):
         self.processor = BlipProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> tuple[str, str]:
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
         try:
             self.load_if_needed()
+            if prompt == "" or prompt == 'default':
+                prompt = "an image of"
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model.to(device)
 
-            inputs = self.processor(images=image, return_tensors="pt")
+            inputs = self.processor(image, prompt, return_tensors="pt")
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             out = self.model.generate(**inputs)
@@ -276,7 +279,7 @@ class NSFWImageProcessor(TorchImageProcessor):
         self.processor = AutoProcessor.from_pretrained(path)
 
     @override
-    def generate_caption(self, image: Image) -> tuple[str, str]:
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
         return 'error', "This model does not support caption generation"
 
     def detect_nsfw(self, image: Image) -> tuple[str, NSFW | str]:
@@ -367,9 +370,9 @@ class LocalImageProcessor(ImageProcessor):
         return model_name in MODEL_CONFIG['MODELS']
 
     @override
-    def generate_caption(self, model_name: str, model_version: str, image: Image) -> tuple[str, str]:
+    def generate_caption(self, model_name: str, model_version: str, image: Image, prompt) -> tuple[str, str]:
         processor = self.get_processor(model_name)
-        return processor.generate_caption(image)
+        return processor.generate_caption(image, prompt)
 
     @override
     def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:

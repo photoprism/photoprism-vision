@@ -36,8 +36,10 @@ class OllamaImageProcessor(ImageProcessor):
         return cached_model
 
     @override
-    def generate_caption(self, model_name: str, model_version: str, image: Image) -> tuple[str, str]:
-        return self._generate_with_prompt(model_name, model_version, [image], caption_prompt)
+    def generate_caption(self, model_name: str, model_version: str, image: Image, prompt) -> tuple[str, str]:
+        if prompt == '' or prompt == 'default':
+            prompt = caption_prompt
+        return self._generate_with_prompt(model_name, model_version, [image], prompt)
 
     @override
     def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:

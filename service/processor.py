@@ -21,7 +21,7 @@ class ImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, model_version: str, images: list[Image], prompt: str) -> tuple[str, Labels | str]:
         """
         :param model_name: name of the requested model
         :param model_version: version of the requested model
@@ -30,7 +30,7 @@ class ImageProcessor(ABC):
         pass
 
     @abstractmethod
-    def detect_nsfw(self, model_name: str, model_version: str, image: Image) -> tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, model_version: str, image: Image, prompt) -> tuple[str, NSFW | str]:
         """
         :param model_name: name of the requested model
         :param model_version: version of the requested model

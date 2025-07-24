@@ -4,9 +4,11 @@ services:
   photoprism-vision:
     ## Use photoprism/vision:preview for testing preview builds:
     image: photoprism/vision:latest
-    stop_grace_period: 5s
+    restart: unless-stopped
+    stop_grace_period: 15s
     working_dir: "/app"
-    ## Make the service accessible on port 5000 (only change the left-hand side if necessary, e.g. “80:5000”):
+    ## Insecurely exposes the Vision service on port 5000
+    ## without authentication (for private networks only):
     ports:
       - "5000:5000"
     user: 1000:1000
@@ -63,27 +65,42 @@ services:
       - venv:/app/venv
 
   ## Ollama Large Language Models
-  ## https://github.com/ollama/ollama
-  ## To install models listed at https://github.com/ollama/ollama?tab=readme-ov-file#model-library:
-  ## docker exec -it ollama ollama run llama3
+  ## see https://ollama.com/search?c=vision
+  ## Before use, you must run the "ollama pull [name:version]"
+  ## command to download and install a model, for example:
+  ## docker compose exec ollama ollama pull qwen2.5vl:3b
   ollama:
     image: ollama/ollama:latest
-    container_name: ollama
+    restart: unless-stopped
+    stop_grace_period: 15s
+    ## Insecurely exposes the Ollama service on port 11434
+    ## without authentication (for private networks only):
     ports:
       - "11434:11434"
     environment:
       ## Ollama server configuration
       OLLAMA_HOST: "0.0.0.0:11434"
-      OLLAMA_MAX_LOADED_MODELS: "2"
-      OLLAMA_NUM_PARALLEL: "2"
-      OLLAMA_MAX_QUEUE: "100"
-      OLLAMA_KEEP_ALIVE: "-1"
-      OLLAMA_MODELS: "/root/.ollama"
-      ## NVIDIA Container Toolkit
+      OLLAMA_MODELS: "/root/.ollama" # model storage path (see volumes section below)
+      OLLAMA_MAX_QUEUE: "100"        # maximum number of queued requests
+      OLLAMA_NUM_PARALLEL: "1"       # maximum number of parallel requests
+      OLLAMA_MAX_LOADED_MODELS: "1"  # maximum number of loaded models per GPU
+      OLLAMA_LOAD_TIMEOUT: "5m"      # maximum time for loading models (default "5m")
+      OLLAMA_KEEP_ALIVE: "10m"       # duration that models stay loaded in memory (default "5m")
+      OLLAMA_CONTEXT_LENGTH: "4096"  # maximum input context length
+      OLLAMA_MULTIUSER_CACHE: "1"    # optimize prompt caching for multi-user scenarios
+      # OLLAMA_DEBUG: "1"              # shows additional debug information
+      # OLLAMA_NOPRUNE: "1"            # disables pruning of model blobs at startup
+      # OLLAMA_NOHISTORY: "1"          # disables readline history
+      # OLLAMA_FLASH_ATTENTION: "1"    # enables the experimental flash attention feature
+      # OLLAMA_SCHED_SPREAD: "1"       # allows scheduling models across all GPUs.
+      # OLLAMA_GPU_OVERHEAD: "0"       # reserves a portion of VRAM per GPU (bytes)
+      # OLLAMA_INTEL_GPU: "1"          # enables experimental Intel GPU detection
+      ## NVIDIA GPU Hardware Acceleration (see https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
     volumes:
       - "ollama:/root/.ollama"
+    ## NVIDIA GPU Hardware Acceleration (see https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html):
     deploy:
       resources:
         reservations:

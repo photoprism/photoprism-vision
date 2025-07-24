@@ -46,8 +46,8 @@ services:
       #   any actions that might be performed. Use explicit language to describe the scene
       #   if necessary for a proper understanding.
       ## NVIDIA Container Toolkit
-      NVIDIA_VISIBLE_DEVICES: "all"
-      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      # NVIDIA_VISIBLE_DEVICES: "all"
+      # NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
     ## Share host devices to enable CPU/GPU hardware acceleration (optional):
     # devices:
     #  - "/dev/dri:/dev/dri"
@@ -61,13 +61,13 @@ services:
     volumes:
        - ".:/app"
        - "python-venv:/app/venv"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: "nvidia"
-              count: 1
-              capabilities: [ gpu ]
+    # deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: "nvidia"
+    #          count: 1
+    #          capabilities: [ gpu ]
 
 volumes:
   python-venv:

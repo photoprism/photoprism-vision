@@ -42,9 +42,13 @@ class OllamaImageProcessor(ImageProcessor):
         return self._generate_with_prompt(model_name, model_version, [image], prompt)
 
     @override
-    def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, model_version: str, images: list[Image], prompt) -> tuple[str, Labels | str]:
         schema = Labels.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, model_version, images, labels_prompt, schema=schema)
+
+        if prompt == '' or prompt == 'default':
+            prompt = labels_prompt
+
+        status, result = self._generate_with_prompt(model_name, model_version, images, prompt, schema=schema)
         if status == 'ok':
             try:
                 labels = Labels.model_validate_json(result)
@@ -54,12 +58,17 @@ class OllamaImageProcessor(ImageProcessor):
         return status, result
 
     @override
-    def detect_nsfw(self, model_name: str, model_version: str, images: Image) -> tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, model_version: str, images: Image, prompt) -> tuple[str, NSFW | str]:
         """
         Tries to detect if the image is NSFW. Accurate detection is not guaranteed.
         """
+
         schema = NSFW.model_json_schema()
-        status, result = self._generate_with_prompt(model_name, model_version, [images], nsfw_prompt, schema=schema)
+
+        if prompt == '' or prompt == 'default':
+            prompt = nsfw_prompt
+    
+        status, result = self._generate_with_prompt(model_name, model_version, [images], prompt, schema=schema)
         if status == 'ok':
             try:
                 probabilities = NSFW.model_validate_json(result)

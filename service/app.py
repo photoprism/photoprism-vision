@@ -102,6 +102,7 @@ def process_image_caption(model_name: str, model_version: str) -> tuple[Response
 def process_image_labels(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data = request.get_json() if request.is_json else request.args
+        prompt = parse_prompt_from_request()
         images = []
         if data.get('url'):
             images = [load_image(data['url'])]
@@ -113,7 +114,7 @@ def process_image_labels(model_name: str, model_version: str) -> tuple[Response,
 
         for processor in image_processors:
             if processor.can_process(model_name, model_version):
-                status, result = processor.generate_labels(model_name, model_version, images)
+                status, result = processor.generate_labels(model_name, model_version, images, prompt)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),
@@ -135,12 +136,13 @@ def process_image_labels(model_name: str, model_version: str) -> tuple[Response,
 def detect_nsfw(model_name: str, model_version: str) -> tuple[Response, int]:
     try:
         data, image = parse_image_from_request()
+        prompt = parse_prompt_from_request()
         if not image:
             return create_response({'error': "image or url missing"}, HTTPStatus.BAD_REQUEST)
 
         for processor in image_processors:
             if processor.can_process(model_name, model_version):
-                status, result = processor.detect_nsfw(model_name, model_version, image)
+                status, result = processor.detect_nsfw(model_name, model_version, image, prompt)
                 if status == 'ok':
                     response_data = ApiResponse(
                         id=data.get('id', str(uuid.uuid4())),

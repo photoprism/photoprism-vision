@@ -375,12 +375,12 @@ class LocalImageProcessor(ImageProcessor):
         return processor.generate_caption(image, prompt)
 
     @override
-    def generate_labels(self, model_name: str, model_version: str, images: list[Image]) -> tuple[str, Labels | str]:
+    def generate_labels(self, model_name: str, model_version: str, images: list[Image], prompt: str) -> tuple[str, Labels | str]:
         # TODO: Implement label generation for local models
         return 'error', 'Local model does not support label generation yet. Use the Ollama API instead.'
 
     @override
-    def detect_nsfw(self, model_name: str, model_version: str, image: Image) -> tuple[str, NSFW | str]:
+    def detect_nsfw(self, model_name: str, model_version: str, image: Image, prompt) -> tuple[str, NSFW | str]:
         """Detect NSFW content in the image using the specified model."""
         processor = self.get_processor(model_name)
         if isinstance(processor, NSFWImageProcessor):

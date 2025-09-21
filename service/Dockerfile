@@ -92,4 +92,4 @@ EXPOSE 5000
 ENTRYPOINT ["entrypoint.sh"]
 
 # Listen at 0.0.0.0:5000 when the container is started.
-CMD [ "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["--bind","0.0.0.0:5000","--timeout","120","app:app"]

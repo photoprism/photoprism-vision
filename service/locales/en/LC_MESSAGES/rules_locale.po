@@ -1,0 +1,713 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-11 19:22+0000\n"
+"PO-Revision-Date: 2022-10-31 16:44+0100\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.3\n"
+
+# Used for translating labels
+msgid "aircraft"
+msgstr ""
+
+# Used for translating labels
+msgid "airport"
+msgstr ""
+
+# Used for translating labels
+msgid "alligator"
+msgstr ""
+
+# Used for translating labels
+msgid "alpine"
+msgstr ""
+
+# Used for translating labels
+msgid "animal"
+msgstr ""
+
+# Used for translating labels
+msgid "animal fur"
+msgstr ""
+
+# Used for translating labels
+msgid "ape"
+msgstr ""
+
+# Used for translating labels
+msgid "architecture"
+msgstr ""
+
+# Used for translating labels
+msgid "baby"
+msgstr ""
+
+# Used for translating labels
+msgid "background"
+msgstr ""
+
+# Used for translating labels
+msgid "bag"
+msgstr ""
+
+# Used for translating labels
+msgid "bakery"
+msgstr ""
+
+# Used for translating labels
+msgid "barbecue"
+msgstr ""
+
+# Used for translating labels
+msgid "basket"
+msgstr ""
+
+# Used for translating labels
+msgid "beach"
+msgstr ""
+
+# Used for translating labels
+msgid "bear"
+msgstr ""
+
+# Used for translating labels
+msgid "beetle"
+msgstr ""
+
+# Used for translating labels
+msgid "bench"
+msgstr ""
+
+# Used for translating labels
+msgid "beverage"
+msgstr ""
+
+# Used for translating labels
+msgid "bike"
+msgstr ""
+
+# Used for translating labels
+msgid "bird"
+msgstr ""
+
+# Used for translating labels
+msgid "boat"
+msgstr ""
+
+# Used for translating labels
+msgid "book"
+msgstr ""
+
+# Used for translating labels
+msgid "bottle"
+msgstr ""
+
+# Used for translating labels
+msgid "bowl"
+msgstr ""
+
+# Used for translating labels
+msgid "bridge"
+msgstr ""
+
+# Used for translating labels
+msgid "buffalo"
+msgstr ""
+
+# Used for translating labels
+msgid "building"
+msgstr ""
+
+# Used for translating labels
+msgid "bus"
+msgstr ""
+
+# Used for translating labels
+msgid "butcher"
+msgstr ""
+
+# Used for translating labels
+msgid "butterfly"
+msgstr ""
+
+# Used for translating labels
+msgid "camera"
+msgstr ""
+
+# Used for translating labels
+msgid "camper"
+msgstr ""
+
+# Used for translating labels
+msgid "camping"
+msgstr ""
+
+# Used for translating labels
+msgid "candle"
+msgstr ""
+
+# Used for translating labels
+msgid "car"
+msgstr ""
+
+# Used for translating labels
+msgid "cart"
+msgstr ""
+
+# Used for translating labels
+msgid "cat"
+msgstr ""
+
+# Used for translating labels
+msgid "chameleon"
+msgstr ""
+
+# Used for translating labels
+msgid "cheetah"
+msgstr ""
+
+# Used for translating labels
+msgid "chicken"
+msgstr ""
+
+# Used for translating labels
+msgid "church"
+msgstr ""
+
+# Used for translating labels
+msgid "coffee"
+msgstr ""
+
+# Used for translating labels
+msgid "comic"
+msgstr ""
+
+# Used for translating labels
+msgid "computer"
+msgstr ""
+
+# Used for translating labels
+msgid "cooking"
+msgstr ""
+
+# Used for translating labels
+msgid "couch"
+msgstr ""
+
+# Used for translating labels
+msgid "cow"
+msgstr ""
+
+# Used for translating labels
+msgid "crab"
+msgstr ""
+
+# Used for translating labels
+msgid "cradle"
+msgstr ""
+
+# Used for translating labels
+msgid "crocodile"
+msgstr ""
+
+# Used for translating labels
+msgid "cup"
+msgstr ""
+
+# Used for translating labels
+msgid "dessert"
+msgstr ""
+
+# Used for translating labels
+msgid "dining"
+msgstr ""
+
+# Used for translating labels
+msgid "display"
+msgstr ""
+
+# Used for translating labels
+msgid "diving"
+msgstr ""
+
+# Used for translating labels
+msgid "document"
+msgstr ""
+
+# Used for translating labels
+msgid "dog"
+msgstr ""
+
+# Used for translating labels
+msgid "dome"
+msgstr ""
+
+# Used for translating labels
+msgid "drinks"
+msgstr ""
+
+# Used for translating labels
+msgid "duck"
+msgstr ""
+
+# Used for translating labels
+msgid "electronics"
+msgstr ""
+
+# Used for translating labels
+msgid "elephant"
+msgstr ""
+
+# Used for translating labels
+msgid "event"
+msgstr ""
+
+# Used for translating labels
+msgid "fan"
+msgstr ""
+
+# Used for translating labels
+msgid "farm"
+msgstr ""
+
+# Used for translating labels
+msgid "festival"
+msgstr ""
+
+# Used for translating labels
+msgid "field"
+msgstr ""
+
+# Used for translating labels
+msgid "fish"
+msgstr ""
+
+# Used for translating labels
+msgid "flag"
+msgstr ""
+
+# Used for translating labels
+msgid "flower"
+msgstr ""
+
+# Used for translating labels
+msgid "food"
+msgstr ""
+
+# Used for translating labels
+msgid "fox"
+msgstr ""
+
+# Used for translating labels
+msgid "frog"
+msgstr ""
+
+# Used for translating labels
+msgid "fruit"
+msgstr ""
+
+# Used for translating labels
+msgid "furniture"
+msgstr ""
+
+# Used for translating labels
+msgid "gas station"
+msgstr ""
+
+# Used for translating labels
+msgid "glass"
+msgstr ""
+
+# Used for translating labels
+msgid "grasshopper"
+msgstr ""
+
+# Used for translating labels
+msgid "helmet"
+msgstr ""
+
+# Used for translating labels
+msgid "heritage"
+msgstr ""
+
+# Used for translating labels
+msgid "hippo"
+msgstr ""
+
+# Used for translating labels
+msgid "historic"
+msgstr ""
+
+# Used for translating labels
+msgid "indoor"
+msgstr ""
+
+# Used for translating labels
+msgid "info"
+msgstr ""
+
+# Used for translating labels
+msgid "insect"
+msgstr ""
+
+# Used for translating labels
+msgid "instrument"
+msgstr ""
+
+# Used for translating labels
+msgid "keyboard"
+msgstr ""
+
+# Used for translating labels
+msgid "kitchen"
+msgstr ""
+
+# Used for translating labels
+msgid "lakeside"
+msgstr ""
+
+# Used for translating labels
+msgid "landscape"
+msgstr ""
+
+# Used for translating labels
+msgid "lemur"
+msgstr ""
+
+# Used for translating labels
+msgid "leopard"
+msgstr ""
+
+# Used for translating labels
+msgid "lion"
+msgstr ""
+
+# Used for translating labels
+msgid "living"
+msgstr ""
+
+# Used for translating labels
+msgid "lizard"
+msgstr ""
+
+# Used for translating labels
+msgid "lobster"
+msgstr ""
+
+# Used for translating labels
+msgid "meat"
+msgstr ""
+
+# Used for translating labels
+msgid "moment"
+msgstr ""
+
+# Used for translating labels
+msgid "monitor"
+msgstr ""
+
+# Used for translating labels
+msgid "monkey"
+msgstr ""
+
+# Used for translating labels
+msgid "monument"
+msgstr ""
+
+# Used for translating labels
+msgid "mountain"
+msgstr ""
+
+# Used for translating labels
+msgid "music"
+msgstr ""
+
+# Used for translating labels
+msgid "nature"
+msgstr ""
+
+# Used for translating labels
+msgid "office"
+msgstr ""
+
+# Used for translating labels
+msgid "ostrich"
+msgstr ""
+
+# Used for translating labels
+msgid "outdoor"
+msgstr ""
+
+# Used for translating labels
+msgid "owl"
+msgstr ""
+
+# Used for translating labels
+msgid "panda"
+msgstr ""
+
+# Used for translating labels
+msgid "parking"
+msgstr ""
+
+# Used for translating labels
+msgid "pasta"
+msgstr ""
+
+# Used for translating labels
+msgid "penguin"
+msgstr ""
+
+# Used for translating labels
+msgid "people"
+msgstr ""
+
+# Used for translating labels
+msgid "photography"
+msgstr ""
+
+# Used for translating labels
+msgid "plant"
+msgstr ""
+
+# Used for translating labels
+msgid "plate"
+msgstr ""
+
+# Used for translating labels
+msgid "portrait"
+msgstr ""
+
+# Used for translating labels
+msgid "public transport"
+msgstr ""
+
+# Used for translating labels
+msgid "puma"
+msgstr ""
+
+# Used for translating labels
+msgid "pumpkin"
+msgstr ""
+
+# Used for translating labels
+msgid "puzzle"
+msgstr ""
+
+# Used for translating labels
+msgid "rabbit"
+msgstr ""
+
+# Used for translating labels
+msgid "reptile"
+msgstr ""
+
+# Used for translating labels
+msgid "rocks"
+msgstr ""
+
+# Used for translating labels
+msgid "runway"
+msgstr ""
+
+# Used for translating labels
+msgid "safe"
+msgstr ""
+
+# Used for translating labels
+msgid "salamander"
+msgstr ""
+
+# Used for translating labels
+msgid "sand"
+msgstr ""
+
+# Used for translating labels
+msgid "scooter"
+msgstr ""
+
+# Used for translating labels
+msgid "scorpion"
+msgstr ""
+
+# Used for translating labels
+msgid "screen"
+msgstr ""
+
+# Used for translating labels
+msgid "seashore"
+msgstr ""
+
+# Used for translating labels
+msgid "shark"
+msgstr ""
+
+# Used for translating labels
+msgid "sheep"
+msgstr ""
+
+# Used for translating labels
+msgid "shell"
+msgstr ""
+
+# Used for translating labels
+msgid "shelter"
+msgstr ""
+
+# Used for translating labels
+msgid "ship"
+msgstr ""
+
+# Used for translating labels
+msgid "shoe"
+msgstr ""
+
+# Used for translating labels
+msgid "shop"
+msgstr ""
+
+# Used for translating labels
+msgid "sign"
+msgstr ""
+
+# Used for translating labels
+msgid "snail"
+msgstr ""
+
+# Used for translating labels
+msgid "snow"
+msgstr ""
+
+# Used for translating labels
+msgid "snowmobile"
+msgstr ""
+
+# Used for translating labels
+msgid "soup"
+msgstr ""
+
+# Used for translating labels
+msgid "spider"
+msgstr ""
+
+# Used for translating labels
+msgid "spoon"
+msgstr ""
+
+# Used for translating labels
+msgid "stained glass"
+msgstr ""
+
+# Used for translating labels
+msgid "stairs"
+msgstr ""
+
+# Used for translating labels
+msgid "store"
+msgstr ""
+
+# Used for translating labels
+msgid "sunglasses"
+msgstr ""
+
+# Used for translating labels
+msgid "theater"
+msgstr ""
+
+# Used for translating labels
+msgid "theme park"
+msgstr ""
+
+# Used for translating labels
+msgid "tool"
+msgstr ""
+
+# Used for translating labels
+msgid "tower"
+msgstr ""
+
+# Used for translating labels
+msgid "toy"
+msgstr ""
+
+# Used for translating labels
+msgid "tractor"
+msgstr ""
+
+# Used for translating labels
+msgid "traffic"
+msgstr ""
+
+# Used for translating labels
+msgid "train"
+msgstr ""
+
+# Used for translating labels
+msgid "truck"
+msgstr ""
+
+# Used for translating labels
+msgid "turtle"
+msgstr ""
+
+# Used for translating labels
+msgid "vase"
+msgstr ""
+
+# Used for translating labels
+msgid "vegetables"
+msgstr ""
+
+# Used for translating labels
+msgid "vehicle"
+msgstr ""
+
+# Used for translating labels
+msgid "wall"
+msgstr ""
+
+# Used for translating labels
+msgid "water"
+msgstr ""
+
+# Used for translating labels
+msgid "weapon"
+msgstr ""
+
+# Used for translating labels
+msgid "whale"
+msgstr ""
+
+# Used for translating labels
+msgid "wild cat"
+msgstr ""
+
+# Used for translating labels
+msgid "wildlife"
+msgstr ""
+
+# Used for translating labels
+msgid "window"
+msgstr ""
+
+# Used for translating labels
+msgid "wine"
+msgstr ""
+
+# Used for translating labels
+msgid "wolf"
+msgstr ""
+
+# Used for translating labels
+msgid "wood"
+msgstr ""
+
+# Used for translating labels
+msgid "worm"
+msgstr ""

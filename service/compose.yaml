@@ -22,6 +22,7 @@ services:
     ## Set environment variables to configure the service (optional):
     environment:
       TF_CPP_MIN_LOG_LEVEL: 1                        # show TensorFlow debug logs
+      LABELS_LOCALE: "en"                         # set labels language
       ## Service user configuration:
       PHOTOPRISM_UID: 1000
       PHOTOPRISM_GID: 1000

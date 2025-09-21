@@ -69,7 +69,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
   echo 'force-confold' > /etc/dpkg/dpkg.cfg.d/force-confold && \
   apt-get update && \
   apt-get -qq dist-upgrade && \
-  apt-get install gosu && \
+  apt-get install -y gosu gettext && \
   echo 'alias ll="ls -alh"' >> /etc/skel/.bashrc && \
   echo 'export PS1="📷 \u@${BUILD_TAG}:\w\$ "' >> /etc/skel/.bashrc && \
   chmod u=rx,go=rx /app/scripts/*.sh && \
@@ -79,6 +79,13 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80retries && \
 # Initialize dependencies
 COPY --chown=root:root requirements.txt .
 COPY --chown=root:root *.py ./
+COPY --chown=root:root locales ./locales
+COPY --chown=root:root assets ./assets
+COPY --chown=root:root ai ./ai
+
+# Compile translation files for i18n support
+# Converts all .po files in ./locales to .mo for gettext
+RUN ./scripts/compile_mo.sh
 
 # Folder for local AI models
 VOLUME /app/models

@@ -15,10 +15,13 @@ This repository provides a [web service](#usage) with advanced [computer vision 
 * [PhotoPrism® Computer Vision API](#photoprism-computer-vision-api)
   * [Table of Contents](#table-of-contents)
   * [Local Models](#local-models)
-    * [Kosmos-2](#kosmos-2)
-    * [VIT-GPT2](#vit-gpt2)
-    * [BLIP](#blip)
-    * [nsfw_image_detector](#nsfw_image_detector)
+    * [Caption](#Caption)
+      * [Kosmos-2](#kosmos-2)
+      * [VIT-GPT2](#vit-gpt2)
+      * [BLIP](#blip)
+    * [NSFW](#NSFW)
+      * [nsfw_image_detector](#nsfw_image_detector)
+    * [Labels](#Labels)
   * [Remote integrations](#remote-integrations)
     * [OLLAMA](#ollama)
       * [Configuration](#configuration)
@@ -58,23 +61,56 @@ This repository provides a [web service](#usage) with advanced [computer vision 
 
 The currently integrated models, each with [its own endpoint](#api-endpoints), are [kosmos-2](#kosmos-2), [vit-gpt2-image-captioning](#vit-gpt2), and [blip-image-captioning large](#blip):
 
-### Kosmos-2
+### Caption
+#### Kosmos-2
 
 Komsos-2 is the most accurate model of the three. It was developed by Microsoft, and this application uses the transformers implementation of the original model, as described in its [Huggingface](https://huggingface.co/microsoft/kosmos-2-patch14-224). This model was released in June 2023, and offers object detection and spatial reasoning. Kosmos-2 has very accurate image captions (a .04-.1 increase in clip score when compared to the other two models offered), and is the default model used.
 
-### VIT-GPT2
+#### VIT-GPT2
 
 This model was released by [nlpconnect](https://huggingface.co/nlpconnect/vit-gpt2-image-captioning). This model combined VIT and GPT-2 to create a multi-modal image captioning model. I have found this to be the least performing of the three, but your mileage may vary.
 
-### BLIP
+#### BLIP
 
 This model was released by [Salesforce](https://huggingface.co/Salesforce/blip-image-captioning-large) in 2022. The primary purpose for this model was to increase both image understanding and text generation using novel techniques. It has achieved a +2.8% CIDEr result, and I've found this model to be more performant than VIT-GPT2, but Kosmos-2 to be slightly better (a .4 increase in CLIP score).
-
-### nsfw_image_detector
+### NSFW
+#### nsfw_image_detector
 
 This model was released by [Freepik](https://huggingface.co/Freepik/nsfw_image_detector). This model can only calculate NSFW weights within four categories: neutral, low, medium, high.
 
 Mapping is done with the best effort to the current API structure.
+
+### Labels
+#### efficientnet_b0.ra_in1k
+[Huggingface](https://huggingface.co/timm/efficientnet_b0.ra_in1k)  
+This model is based on EfficientNet-B0 and is suitable for general image classification tasks, offering a good balance between performance and inference speed.
+- Input Size: 224 
+- VRAM Usage: 1.5 GB
+
+
+#### efficientvit_l3.r384_in1k
+[Huggingface](https://huggingface.co/timm/efficientvit_l3.r384_in1k)  
+EfficientViT L3 is a Vision Transformer model optimized for image classification with an input resolution of 384. It provides a balance between accuracy and resource usage, making it suitable for environments with limited hardware.
+- Input Size: 384 
+- VRAM Usage: 4 GB
+
+#### tf_efficientnetv2_l.in1k
+[Huggingface](https://huggingface.co/timm/tf_efficientnetv2_l.in1k)  
+TensorFlow EfficientNetV2-L is one of the more advanced models in the EfficientNet family. Compared to B0, it offers higher accuracy, making it a good choice for scenarios where more precise labeling is required.
+- Input Size: 448 
+- VRAM Usage: 4.3 GB
+
+#### convnextv2_huge.fcmae_ft_in22k_in1k_384
+[Huggingface](https://huggingface.co/timm/convnextv2_huge.fcmae_ft_in22k_in1k_384)  
+ConvNeXtV2 Huge is a model pretrained with MAE (Masked Autoencoder) and fine-tuned on ImageNet-22k and ImageNet-1k with an input size of 384. It performs well on large-scale classification tasks but requires more computational resources.
+- Input Size: 384 
+- VRAM Usage: 10 GB
+
+#### convnextv2_huge.fcmae_ft_in22k_in1k_512
+[Huggingface](https://huggingface.co/timm/convnextv2_huge.fcmae_ft_in22k_in1k_512)  
+This version is identical to the 384 variant but uses a larger input resolution of 512, improving detail recognition and classification accuracy. It is best suited for use cases that require very high precision.
+- Input Size: 512 
+- VRAM Usage: >12 GB
 
 ## Remote integrations
 

@@ -1,5 +1,5 @@
-PhotoPrism® Computer Vision Models
-==================================
+PhotoPrism® Vision Playground
+=============================
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-454377.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Documentation](https://img.shields.io/badge/read-the%20docs-4d6a91.svg)](https://docs.photoprism.app/developer-guide/)
@@ -8,7 +8,9 @@ PhotoPrism® Computer Vision Models
 [![Bluesky Social](https://dl.photoprism.app/img/badges/badge-bluesky.svg)](https://bsky.app/profile/photoprism.app)
 [![Mastodon](https://dl.photoprism.app/img/badges/badge-floss-social.svg)](https://floss.social/@photoprism)
 
-This repository provides a [web service](#usage) with advanced [computer vision models](#models)  for use with [PhotoPrism®](https://github.com/photoprism/photoprism).
+This repository provides developers with additional [computer vision models](#models) and [customization options](#usage).
+
+**Looking for an easy way to [generate captions](https://docs.photoprism.app/developer-guide/vision/caption-generation/) and [labels](https://github.com/photoprism/photoprism/issues/5232) for your pictures? Try our [Ollama integration](https://docs.photoprism.app/developer-guide/vision/caption-generation/#ollama-setup-guide)!**
 
 ## Table of Contents
 <!-- TOC -->

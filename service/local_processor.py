@@ -1,7 +1,9 @@
-import logging
-import os
+from pyexpat import model
+import logging, traceback
+import os, yaml, gettext, threading
 from abc import ABC, abstractmethod
 
+import timm
 import torch
 from PIL.Image import Image
 from transformers import (
@@ -12,12 +14,23 @@ from transformers import (
     BlipProcessor,
     TimmWrapperForImageClassification,
     ViTImageProcessor,
-    VisionEncoderDecoderModel
+    VisionEncoderDecoderModel,
+    AutoImageProcessor,
+    AutoModelForImageClassification,
+    AutoConfig,
+    CLIPModel,
+    CLIPProcessor
 )
 from typing_extensions import override
 
-from api import Labels, NSFW, NSFWProbabilities
+from api import Labels, Label, NSFW, NSFWProbabilities
 from processor import ImageProcessor
+from ai.classify.labels_utils import LabelRulesProcessor
+
+# set language
+lang_code = os.getenv("LABELS_LOCALE", "en")  # Default "en"
+translation = gettext.translation('rules_locale', localedir='/app/locales', languages=[lang_code], fallback=True)
+translation.install()
 
 # Configuration Constants
 MODEL_CONFIG = {
@@ -41,6 +54,31 @@ MODEL_CONFIG = {
         'nsfw_image_detector': {
             'path': 'models/nsfw_image_detector',
             'source': 'Freepik/nsfw_image_detector',
+            'version': 'latest',
+        },
+        'efficientnet_b0.ra_in1k': {
+            'path': 'models/efficientnet_b0.ra_in1k',
+            'source': 'timm/efficientnet_b0.ra_in1k',
+            'version': 'latest',
+        },
+        'efficientvit_l3.r384_in1k': {
+            'path': 'models/efficientvit_l3.r384_in1k',
+            'source': 'timm/efficientvit_l3.r384_in1k',
+            'version': 'latest',
+        },
+        'tf_efficientnetv2_l.in1k': {
+            'path': 'models/tf_efficientnetv2_l.in1k',
+            'source': 'timm/tf_efficientnetv2_l.in1k',
+            'version': 'latest',
+        },
+        'convnextv2_huge.fcmae_ft_in22k_in1k_384': {
+            'path': 'models/convnextv2_huge.fcmae_ft_in22k_in1k_384',
+            'source': 'timm/convnextv2_huge.fcmae_ft_in22k_in1k_384',
+            'version': 'latest',
+        },
+        'convnextv2_huge.fcmae_ft_in22k_in1k_512': {
+            'path': 'models/convnextv2_huge.fcmae_ft_in22k_in1k_512',
+            'source': 'timm/convnextv2_huge.fcmae_ft_in22k_in1k_512',
             'version': 'latest',
         }
     }
@@ -107,14 +145,17 @@ class TorchImageProcessor(ABC):
 
 class Kosmos2Processor(TorchImageProcessor):
     """Processor for the Kosmos-2 model."""
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        super().__init__()
 
     @override
     def _get_model_config(self) -> dict[str, str]:
-        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+        return MODEL_CONFIG['MODELS'][self.model_name]
 
     @override
     def _get_model_name(self) -> str:
-        return 'kosmos-2'
+        return self.model_name
 
     @override
     def _download_model(self, source: str, path: str):
@@ -156,14 +197,17 @@ class Kosmos2Processor(TorchImageProcessor):
 
 class VitGpt2Processor(TorchImageProcessor):
     """Processor for the ViT-GPT2 model."""
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        super().__init__()
 
     @override
     def _get_model_config(self) -> dict[str, str]:
-        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+        return MODEL_CONFIG['MODELS'][self.model_name]
 
     @override
     def _get_model_name(self) -> str:
-        return 'vit-gpt2'
+        return self.model_name
 
     @override
     def _download_model(self, source: str, path: str):
@@ -215,14 +259,17 @@ class VitGpt2Processor(TorchImageProcessor):
 
 class BlipImageProcessor(TorchImageProcessor):
     """Processor for the BLIP model."""
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        super().__init__()
 
     @override
     def _get_model_config(self) -> dict[str, str]:
-        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+        return MODEL_CONFIG['MODELS'][self.model_name]
 
     @override
     def _get_model_name(self) -> str:
-        return 'blip'
+        return self.model_name
 
     @override
     def _download_model(self, source: str, path: str):
@@ -258,14 +305,17 @@ class BlipImageProcessor(TorchImageProcessor):
 
 class NSFWImageProcessor(TorchImageProcessor):
     """Processor for NSFW image detection."""
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        super().__init__()
 
     @override
     def _get_model_config(self) -> dict[str, str]:
-        return MODEL_CONFIG['MODELS'][self._get_model_name()]
+        return MODEL_CONFIG['MODELS'][self.model_name]
 
     @override
     def _get_model_name(self) -> str:
-        return 'nsfw_image_detector'
+        return self.model_name
 
     @override
     def _download_model(self, source: str, path: str):
@@ -311,6 +361,123 @@ class NSFWImageProcessor(TorchImageProcessor):
         except Exception as e:
             return 'error', str(e)
 
+# NOTE: Only supports AutoModelForImageClassification with ImageNet-1K classes.
+class HFImageClassificationProcessor(TorchImageProcessor):
+    """Processor for huggingface classification models."""
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+        # get labels rules
+        rules_path = '/app/assets/classify/rules.yml'
+        self._labels_rules = LabelRulesProcessor(rules_path)
+        # get imagenet1k labels
+        labels_path = "/app/assets/classify/labels_imagenet1K.txt"
+        with open(labels_path, "r", encoding="utf-8") as f:
+            self.labels_1K = [line.strip() for line in f if line.strip()]
+
+        super().__init__()
+
+    @override
+    def _get_model_config(self) -> dict[str, str]:
+        return MODEL_CONFIG['MODELS'][self.model_name]
+
+    @override
+    def _get_model_name(self) -> str:
+        return self.model_name
+
+    @override
+    def _download_model(self, source: str, path: str):
+        try:
+            # read config to judge model_type
+            config = AutoConfig.from_pretrained(source)
+            model_type = config.model_type
+            
+            if model_type == "clip":
+                # CLIP model
+                CLIPModel.from_pretrained(source).save_pretrained(path)
+                CLIPProcessor.from_pretrained(source).save_pretrained(path)
+            else:
+                # classification model
+                AutoModelForImageClassification.from_pretrained(source).save_pretrained(path)
+                AutoImageProcessor.from_pretrained(source)
+        except Exception as e:
+            logger.error(f"Error generating labels: {e}")
+
+    @override
+    def _load_model(self):
+        try:
+            path = self._get_model_config()['path']
+
+            # read config to judge model_type
+            config = AutoConfig.from_pretrained(path)
+            model_type = config.model_type
+
+            if model_type == "clip":
+                # CLIP model
+                self.model = CLIPModel.from_pretrained(path)
+                self.processor = CLIPProcessor.from_pretrained(path)
+            else:
+                # classification model
+                self.model = AutoModelForImageClassification.from_pretrained(path)
+                self.processor = AutoImageProcessor.from_pretrained(path)
+            
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.to(self.device)
+        except Exception as e:
+            logger.error(f"Error generating labels: {e}")
+
+    @override
+    def generate_caption(self, image: Image, prompt) -> tuple[str, str]:
+        return 'error', "This model does not support caption generation"
+
+    def generate_labels(self, images: Image, prompt) -> tuple[str, str]:
+        try:
+            logger.info(f"Generating labels started for model {self.model_name}")
+            self.load_if_needed()
+            logger.info(f"load_if_needed done")
+
+            labels = []
+            for image in images:
+                if self.model.config.model_type == "clip":
+                    # CLIP model
+                    inputs = self.processor(images=image, return_tensors="pt").to(self.device)
+                    output = self.model.get_image_features(**inputs)
+                else:
+                    # ImageClassification model
+                    inputs = self.processor(images=image, return_tensors="pt").to(self.device)
+                    output = self.model(**inputs).logits
+                logits = output
+
+                top5_probabilities, top5_class_indices = torch.topk(logits.softmax(dim=1)[0], k=5)
+
+                top_label = self.labels_1K[top5_class_indices[0].item()].lower()
+                top_prob = top5_probabilities[0].item()
+
+                trans = self._labels_rules.transform_label(top_label, top_prob)
+                if(trans['state']=='fail'):
+                    err_msg = f'transform label fail: {top_label} {top_prob:.2f}, please check rules.'
+                    logger.warning(err_msg)
+                    return 'error', err_msg
+
+                lbl_name = trans['label'].lower()
+                categories = trans['categories']
+                conf = trans['conf']
+
+                if(categories != None):
+                    categories = [_(item.lower()) for item in categories]
+
+                logger.info(f"Image classified as {_(lbl_name)} with confidence {conf:.4f}")
+                output_label = Label(
+                    name=_(lbl_name),
+                    categories = categories,
+                    confidence=conf,
+                )
+                labels.append(output_label)
+
+            results = Labels(labels=labels)
+            return 'ok', results
+        except Exception as e:
+            logger.error(f"Error generating labels: {traceback.format_exc()}")
+            return 'error', str(e)
 
 class ProcessorFactory:
     """Factory for creating processor instances."""
@@ -318,23 +485,31 @@ class ProcessorFactory:
     @staticmethod
     def create_processor(model_name: str) -> TorchImageProcessor:
         if model_name == 'kosmos-2':
-            return Kosmos2Processor()
+            return Kosmos2Processor(model_name)
         elif model_name == 'vit-gpt2':
-            return VitGpt2Processor()
+            return VitGpt2Processor(model_name)
         elif model_name == 'blip':
-            return BlipImageProcessor()
+            return BlipImageProcessor(model_name)
         elif model_name == 'nsfw_image_detector':
-            return NSFWImageProcessor()
+            return NSFWImageProcessor(model_name)
+        elif model_name == 'efficientnet_b0.ra_in1k':
+            return HFImageClassificationProcessor(model_name)
+        elif model_name == 'efficientvit_l3.r384_in1k':
+            return HFImageClassificationProcessor(model_name)
+        elif model_name == 'tf_efficientnetv2_l.in1k':
+            return HFImageClassificationProcessor(model_name)
+        elif model_name == 'convnextv2_huge.fcmae_ft_in22k_in1k_384':
+            return HFImageClassificationProcessor(model_name)
+        elif model_name == 'convnextv2_huge.fcmae_ft_in22k_in1k_512':
+            return HFImageClassificationProcessor(model_name)
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
-
-# NOTE This processor ignores model_version parameter
 class LocalImageProcessor(ImageProcessor):
     """Manager class that coordinates local image processors."""
 
     def __init__(self, download_all_at_startup=True):
-        self.processors = {}
+        self.processors = {} 
         self._ensure_model_dirs()
 
         # Download all models at first start if requested
@@ -356,6 +531,7 @@ class LocalImageProcessor(ImageProcessor):
         for model_name in MODEL_CONFIG['MODELS']:
             processor = ProcessorFactory.create_processor(model_name)
             processor.download_model_if_needed()
+            logger.info(f"{model_name}")
         logger.info("All models downloaded successfully.")
 
     def get_processor(self, model_name: str) -> TorchImageProcessor:
@@ -376,8 +552,8 @@ class LocalImageProcessor(ImageProcessor):
 
     @override
     def generate_labels(self, model_name: str, model_version: str, images: list[Image], prompt: str) -> tuple[str, Labels | str]:
-        # TODO: Implement label generation for local models
-        return 'error', 'Local model does not support label generation yet. Use the Ollama API instead.'
+        processor = self.get_processor(model_name)
+        return processor.generate_labels(images, prompt)
 
     @override
     def detect_nsfw(self, model_name: str, model_version: str, image: Image, prompt) -> tuple[str, NSFW | str]:
